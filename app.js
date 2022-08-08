@@ -1,144 +1,143 @@
-// 使用express构建web服务器
+const createError = require('http-errors');
 const express = require('express');
-const bodyParser = require('body-parser');
+const path = require('path');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
-const pool = require('./pool');
+const logger = require('morgan');
 const helmet = require('helmet');
-
+const pool = require('./pool');
+const config = require('./config');
+const kit = require('./kit');
 // 引入路由模块
-const index = require('./routes/index.js');
-const products = require('./routes/products.js');
-const details = require('./routes/details.js');
-const users = require('./routes/users.js');
-const cart = require('./routes/cart.js');
-const comment = require('./routes/comment.js');
-const brand = require('./routes/brand.js');
-const dictionaries = require('./routes/dictionaries.js');
-const order = require('./routes/order.js');
-const collection = require('./routes/collection.js');
-const address = require('./routes/address.js');
-const message = require('./routes/message.js');
-const admin = require('./routes/admin.js');
+const indexRouter = require('./routes/index.js');
+const productRouter = require('./routes/product.js');
+const detailRouter = require('./routes/detail.js');
+const userRouter = require('./routes/user.js');
+const cartRouter = require('./routes/cart.js');
+const commentRouter = require('./routes/comment.js');
+const brandRouter = require('./routes/brand.js');
+const dictionariesRouter = require('./routes/dictionaries.js');
+const orderRouter = require('./routes/order.js');
+const collectionRouter = require('./routes/collection.js');
+const addressRouter = require('./routes/address.js');
+const messageRouter = require('./routes/message.js');
+const adminRouter = require('./routes/admin.js');
+const app = express();
 
-let app = express();
-
-// 接口白名单
-const requestWhiteList = [
-  '/api/index/onepush',
-  '/api/index/banner',
-  '/api/index/hot',
-  '/api/products/select',
-  '/api/index/kw',
-  '/api/users/log',
-  '/api/users/vali/forgetPwd',
-  '/api/users/update/upwd',
-  '/api/users/reg',
-  '/api/details/select',
-  '/api/cart/select/num',
-  '/api/comment/select/pid',
-  '/api/dic/selectDic',
-  '/api/products/select/filter',
-  '/api/users/logout',
-  '/api/message/select'
-];
+// 视图模板引擎 - 配置
+app.set('views', path.join(__dirname, 'views'));
+app.set('view engine', 'jade');
 
 if(process.env.NODE_ENV === 'production') {
     // 开启安全防护
     app.use(helmet());
 }
 
-// 配置跨域访问
+// 跨域访问 - 配置
 app.use(cors({
-    // 指定接收的地址
-    origin: [ 
-        'http://localhost:3000', 
-        'http://127.0.0.1:3000', 
-        'http://localhost:8080',
-        'http://127.0.0.1:8080',
-        'http://172.16.66.163:3000', 
-        'http://192.168.2.102:3000', 
-        'http://192.168.2.101:3000', 
-        'http://192.168.2.100:3000', 
-        'http://localhost:9000',
-        'http://127.0.0.1:9000',
-    ],
-    // 指定header
-    alloweHeaders: ['Content-Type', 'Authorization'],
-    credentials: true
-}))
+    // 源
+    origin: true,
+    // 指定请求方式
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
+    // 是否允许传递请求头
+    credentials: true,
+}));
 
-// 使用body-parser中间件
-app.use( bodyParser.json({
-  limit: '50mb'
-}) );
-app.use( bodyParser.urlencoded({
-	extended: false,
-	limit: '50mb'
-}) );
-
-// cookie
-app.use( cookieParser() );
-
-// 托管静态资源到public目录下
-app.use('/api', express.static('public'));
+app.use(logger('dev'));
+app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
+app.use(cookieParser());
+app.use('/api', express.static(path.join(__dirname, 'public')));
 
 app.all('/*', (req, res, next) => {
-    const { token, type, uname } = req.headers || {};
-    const { path, body, query } = req;
-    if ((type == 'wx' || type == 'vue') && !requestWhiteList.includes(path)) {
-        if ((query.hasOwnProperty('uname') && !query.uname) || (body.hasOwnProperty('uname') && !body.uname) || !uname) {
-            res.status(401).send({
-                code: 401,
-                msg: '认证失败，重新登录！'
-            })
-            return;
-        }
-        if (!token) {
-            res.status(401).send({
-                code: 401,
-                msg: '认证token不存在，重新登录！'
-            })
-            return;
-        }
-        let sql = "SELECT * FROM dm_user WHERE upwd=? AND uname=?";
-        pool.query(sql, [token, uname], (err, data) => {
-            if (err) {
-                res.status(503).send({
-                    code: 2,
-                    msg: err
-                })
-            } else {
-                if (!data.length) {
-                    res.status(401).send({
-                        code: 401,
-                        msg: '认证token已失效，重新登录！'
-                    })
-                    return;
-                }
-                next();
-            }
-        });
-    } else {
-        next();
+    const { token, type, uname } = req?.headers || {};
+    const getErrCode = kit.joinErrCode("APP-ALL");
+
+    if(config.REQUEST_URL_WHITE_LIST.includes(req?.path) || !['wx', 'vue'].includes(type)) {
+        return next();
     }
-})
+
+    if(!uname) {
+        return res.status(401).send(
+            getSendContent({
+                code: getErrCode('001'),
+                msg: '认证失败!',
+            }
+        ));
+    }
+
+    if (!token) {
+        return res.status(401).send(
+            getSendContent({
+                code: getErrCode('002'),
+                msg: '认证失败!',
+            }
+        ));
+    }
+    
+    pool.query(
+        `SELECT * FROM dm_user WHERE upwd=${ token } AND uname=${ uname }`, 
+        null, 
+        (err, result) => {
+            if(err) {
+                return res.status(500).send(
+                    getSendContent({
+                        code: getErrCode('003'),
+                        msg: '操作失败!',
+                        error: err,
+                    }
+                ));
+            };
+
+            if(!data?.length) {
+                return res.status(401).send(
+                    getSendContent({
+                        code: getErrCode('004'),
+                        msg: 'token已失效, 请重新登录!',
+                    }
+                ));
+            }
+
+            next();
+        }
+    );
+});
 
 // 使用路由器来管理路由
-app.use('/api/index', index);
-app.use('/api/products', products);
-app.use('/api/details', details);
-app.use('/api/users', users);
-app.use('/api/cart', cart);
-app.use('/api/comment', comment);
-app.use('/api/brand', brand);
-app.use('/api/dic', dictionaries);
-app.use('/api/order', order);
-app.use('/api/collection', collection);
-app.use('/api/address', address);
-app.use('/api/message', message);
-app.use('/api/admin', admin);
-
-app.listen(8000, () =>{
-	console.log('服务器创建成功8000！！！');
+app.use('/', (req, res, next) => {
+    res.render('index', { title: '哈哈哈哈哈哈哈' });
 });
+app.use('/api/index', indexRouter);
+app.use('/api/products', productRouter);
+app.use('/api/details', detailRouter);
+app.use('/api/users', userRouter);
+app.use('/api/cart', cartRouter);
+app.use('/api/comment', commentRouter);
+app.use('/api/brand', brandRouter);
+app.use('/api/dic', dictionariesRouter);
+app.use('/api/order', orderRouter);
+app.use('/api/collection', collectionRouter);
+app.use('/api/address', addressRouter);
+app.use('/api/message', messageRouter);
+app.use('/api/admin', adminRouter);
+
+// catch 404 and forward to error handler
+app.use(function(req, res, next) {
+  next(createError(404));
+});
+
+// error handler
+app.use(function(err, req, res, next) {
+  // set locals, only providing error in development
+  res.locals.message = err.message;
+  res.locals.error = req.app.get('env') === 'development' ? err : {};
+
+  // render the error page
+  res.status(err.status || 500);
+  res.render('error');
+});
+
+// 自定义端口号
+process.env.PORT = '8000';
+
+module.exports = app;
