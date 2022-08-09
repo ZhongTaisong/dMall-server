@@ -2,7 +2,9 @@ const express = require('express');
 const router = express.Router();
 const pool = require('../pool');
 
-// 热门推荐
+/**
+ * 热门推荐
+ */
 router.get('/hot', (req, res) => {
 	let sql = 'SELECT id, mainPicture, price, productName, description FROM dm_products WHERE hot=101';				
 	pool.query(sql, null, (err, data) => {

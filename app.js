@@ -7,7 +7,6 @@ const logger = require('morgan');
 const helmet = require('helmet');
 const pool = require('./pool');
 const config = require('./config');
-const kit = require('./kit');
 // 引入路由模块
 const indexRouter = require('./routes/index.js');
 const productRouter = require('./routes/product.js');
@@ -22,6 +21,7 @@ const collectionRouter = require('./routes/collection.js');
 const addressRouter = require('./routes/address.js');
 const messageRouter = require('./routes/message.js');
 const adminRouter = require('./routes/admin.js');
+const publicRouter = require('./routes/public.js');
 const app = express();
 
 // 视图模板引擎 - 配置
@@ -49,30 +49,25 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use('/api', express.static(path.join(__dirname, 'public')));
 
-app.all('/*', (req, res, next) => {
-    const { token, type, uname } = req?.headers || {};
-    const getErrCode = kit.joinErrCode("APP-ALL");
+app.all("*", (req, res, next) => {
+    const { token, uname } = req?.headers || {};
 
-    if(config.REQUEST_URL_WHITE_LIST.includes(req?.path) || !['wx', 'vue'].includes(type)) {
+    if(/^(\/api\/public)/.test(req?.path)) {
         return next();
     }
 
     if(!uname) {
-        return res.status(401).send(
-            getSendContent({
-                code: getErrCode('001'),
-                msg: '认证失败!',
-            }
-        ));
+        return res.status(401).send({
+            code: "DM-000001",
+            msg: '认证失败!',
+        });
     }
 
     if (!token) {
-        return res.status(401).send(
-            getSendContent({
-                code: getErrCode('002'),
-                msg: '认证失败!',
-            }
-        ));
+        return res.status(401).send({
+            code: "DM-000002",
+            msg: '认证失败!',
+        });
     }
     
     pool.query(
@@ -80,22 +75,18 @@ app.all('/*', (req, res, next) => {
         null, 
         (err, result) => {
             if(err) {
-                return res.status(500).send(
-                    getSendContent({
-                        code: getErrCode('003'),
-                        msg: '操作失败!',
-                        error: err,
-                    }
-                ));
+                return res.status(500).send({
+                    code: "DM-000003",
+                    msg: '操作失败!',
+                    error: err,
+                });
             };
 
             if(!data?.length) {
-                return res.status(401).send(
-                    getSendContent({
-                        code: getErrCode('004'),
-                        msg: 'token已失效, 请重新登录!',
-                    }
-                ));
+                return res.status(401).send({
+                    code: "DM-000004",
+                    msg: '登录token已失效, 请重新登录!',
+                });
             }
 
             next();
@@ -103,10 +94,6 @@ app.all('/*', (req, res, next) => {
     );
 });
 
-// 使用路由器来管理路由
-app.use('/', (req, res, next) => {
-    res.render('index', { title: '哈哈哈哈哈哈哈' });
-});
 app.use('/api/index', indexRouter);
 app.use('/api/products', productRouter);
 app.use('/api/details', detailRouter);
@@ -120,6 +107,7 @@ app.use('/api/collection', collectionRouter);
 app.use('/api/address', addressRouter);
 app.use('/api/message', messageRouter);
 app.use('/api/admin', adminRouter);
+app.use('/api/public', publicRouter);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {

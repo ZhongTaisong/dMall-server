@@ -12,38 +12,6 @@ exports.fnGetPromiseValue = (obj) => {
 };
 
 /**
- * 拼接 - 异常code
- * @param {*} prefix 前缀
- * @returns 
- */
-exports.joinErrCode = (prefix) => (code) => {
-    if(!prefix || !code) return;
-
-    return `${prefix}-${ code }`;
-}
-
-/**
- * 返回响应结果 - 标准结构
- * @param {*} params 
- * @returns 
- */
-exports.getSendContent = (params = {}) => {
-    if (!params || !Object.keys(params).length) return;
-
-    return {
-        // 结果code
-        code: null,
-        // 主体内容
-        content: null,
-        // 操作提示
-        msg: null,
-        // 错误内容
-        error: null,
-        ...params,
-    };
-}
-
-/**
  * 二次封装 - Promise.allSettled
  * @param {*} data 
  * @returns 
