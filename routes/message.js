@@ -1,6 +1,5 @@
 const express = require('express');
 const router = express.Router();
-const pool = require('../pool');
 const moment = require('moment');
 
 // 喜欢 / 不喜欢
@@ -21,7 +20,7 @@ router.post('/update/agree', (req, res) => {
 
     let sql = 'UPDATE dm_message SET agree=?, disagree=? WHERE id=?';
     let msg = type == 'agree' ? '喜欢' : '不喜欢';
-    pool.query(sql, [agreeNum, disagreeNum, id], (err, data) => {
+    req?.pool?.query?.(sql, [agreeNum, disagreeNum, id], (err, data) => {
         if(err) throw err;
         if(data.affectedRows){
             res.send({
@@ -64,7 +63,7 @@ router.post('/add', (req, res) => {
 
     let timer = moment(Date.now()).format('YYYY-MM-DD HH:mm:ss');
     let sql = "INSERT INTO dm_message VALUES (NULL, ?, ?, ?, ?, ?)";
-    pool.query(sql, [uname, content, timer, 0, 0], (err, data) => {
+    req?.pool?.query?.(sql, [uname, content, timer, 0, 0], (err, data) => {
         if(err) throw err;
         if( data.affectedRows ){
             res.send({
@@ -92,7 +91,7 @@ router.get('/delete/:id', (req, res) => {
         return;
     }
     let sql = "DELETE FROM dm_message WHERE id=?";
-    pool.query(sql, [id], (err, data) => {
+    req?.pool?.query?.(sql, [id], (err, data) => {
         if( err ){
             res.status(503).send({
               code: 2,
@@ -122,7 +121,7 @@ router.get('/select', (req, res) => {
         let sql, avatarArr=[];
         const arr = await new Promise((resolve, reject) => {
             sql = "SELECT * FROM dm_message ORDER BY submitTime DESC";
-            pool.query(sql, null, (err, data) => {
+            req?.pool?.query?.(sql, null, (err, data) => {
                 if(err) throw err;
                 resolve(data);
             });
@@ -132,7 +131,7 @@ router.get('/select', (req, res) => {
             await new Promise((resolve, reject) => {
                 arr.forEach((item, index) => {
                     sql = `SELECT uname, avatar FROM dm_user WHERE uname='${item.uname}'`;
-                    pool.query(sql, null, (err, data) => {
+                    req?.pool?.query?.(sql, null, (err, data) => {
                         if(err) throw err;
                         data && data.length && data[0] && avatarArr.push(data[0]);
                         avatarArr.length == arr.length && resolve();

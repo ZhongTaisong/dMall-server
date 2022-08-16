@@ -1,105 +1,151 @@
 const express = require('express');
 const router = express.Router();
 const fs = require('fs');
-const pool = require('../pool');
 const moment = require('moment');
+const kit = require('./../kit');    
+const config = require('./../config');
+const lodash = require('lodash');
 
 // multer上传图片相关设置
 const multer  = require('multer');
 const dest = 'public/img/products';
 let upload = multer() // 文件储存路径
 
-// 商品筛选条件
-router.get('/select/filter', (req, res) => {
-    // 品牌、价格、屏幕尺寸、处理器、内存容量、硬盘容量、厚度、系统
-    let sql = 'SELECT brandId, screenSize, cpu, memory, disk, thickness, systems FROM dm_products';
-    pool.query(sql, null, (err, data) => {
-        if(err) throw err;
-        let obj = {
-            brandId: [],
-            screenSize: [],
-            cpu: [],
-            memory: [],
-            disk: [],
-            thickness: [],
-            systems: []
-        };
-        data.forEach(item => {
-            for(let d in item){
-                obj[d].push(item[d]);
-            }
-        })
-        for(let o in obj){
-            obj[o] = [...new Set(obj[o])];
-        }
-        res.send({
-            code: 200,
-            data: [obj],
-            
+// 路由器标识
+const ROUTER_Flag = "GOODS_LIST";
+
+/**
+ * 分页查询 - 商品列表
+ */
+router.post('/public/select', async (req, res) => {
+	const { 
+        current = 0, 
+        pageSize = config?.PAGE_SIZE,
+        keyword = '',
+        filterParams = {},
+    } = req.body || {};
+
+    if(typeof current !== 'number'){
+        return res.status(400).send({
+            code: `DM-${ ROUTER_Flag }-000001`,
+            msg: 'current是Number类型!',
         });
-    })
+    }
+
+    if(current < 0) {
+        return res.status(400).send({
+            code: `DM-${ ROUTER_Flag }-000002`,
+            msg: 'current大于等于0!',
+        });
+    }
+
+    if(typeof pageSize !== 'number'){
+        return res.status(400).send({
+            code: `DM-${ ROUTER_Flag }-000003`,
+            msg: 'pageSize是Number类型!',
+        });
+    }
+
+    if(pageSize < 1) {
+        return res.status(400).send({
+            code: `DM-${ ROUTER_Flag }-000004`,
+            msg: 'pageSize大于等于1!',
+        });
+    }
+
+    let sql = "";
+    if(filterParams && Object.keys(filterParams).length) {
+        Object.entries(filterParams).forEach(([key, value]) => {
+            if(key === 'price') {
+                const arr = value?.split?.("-")?.filter?.(item => item);
+                if(Array.isArray(arr)) {
+                    if(arr.length >= 2) {
+                        sql += `AND ${key}>="${parseFloat(arr?.[0]) || 0}" AND ${key}<="${parseFloat(arr?.[1]) || 0}"`;
+                    }else if(arr.length === 1) {
+                        sql += `AND ${key}>="${parseFloat(arr?.[0]) || 0}"`;
+                    }
+                }
+            }else {
+                sql += `AND ${key}="${value}"`;
+            }
+        });
+    }
+
+    const [dataSource, total] = await new Promise((resolve, reject) => {
+        req?.pool?.query?.(
+            `
+            SELECT SQL_CALC_FOUND_ROWS * FROM dm_products WHERE 
+            ${ keyword ? `description LIKE "%${ keyword }%" AND` : '' } 
+            onLine=100 ${ sql } LIMIT ${ current }, ${ pageSize };
+            SELECT FOUND_ROWS() as total;
+            `,
+            null, 
+            (err, reuslt) => !err ? resolve([reuslt?.[0] || [], reuslt?.[1]?.[0]?.total || 0]) : reject(err),
+        );
+    });
+
+    res.send({
+        code: "DM-000000",
+        content: {
+            dataSource,
+            current,
+            pageSize,
+            total,
+        },
+    });
 });
 
-// 查询所有商品 / 符合当前筛选条件的商品
-router.post('/select', (req, res) => {
-    let { current=1, pageSize, onLine, filterList } = req.body || {};
-    if( !current ){
-        res.status(400).send({
-            code: 1,
-            msg: 'current不能为空，且大于0'
-        })
-        return;
+/**
+ * 查询 - 商品筛选条件
+ */
+router.get('/public/select/filter', async (req, res) => {
+    const promise_list = [];
+    ['brandId', 'screenSize', 'cpu', 'memory', 'disk', 'thickness', 'systems'].forEach(item => {
+        promise_list.push(
+            new Promise((resolve, reject) => {
+                req?.pool?.query?.(
+                    `SELECT ${ item } FROM dm_products`,
+                    null, 
+                    (err, reuslt) => !err ? resolve({ [item]: reuslt }) : reject(err),
+                )
+            })
+        );
+    });
+
+    const reuslt = await kit.promiseAllSettled(promise_list);
+    if(!Array.isArray(reuslt)) {
+        return res.status(400).send({
+            code: `DM-${ ROUTER_Flag }-000005`,
+            msg: '操作失败!',
+        });
     }
 
-    let sql;
-    if( filterList && Object.keys(filterList).length ){
-        sql = `SELECT * FROM dm_products WHERE onLine=100 AND`;
-        for(let p in filterList){
-            if( p == 'price' ){
-                if( filterList[p].includes('-') ){
-                    let [a, b] = filterList[p].split('-');
-                    sql += ` ${p}>=${a} AND ${p}<=${b} AND`
-                }else{
-                    sql += ` ${p}>=${parseInt(filterList[p])} AND`
-                }
-            }else{
-                sql += ` ${p}='${filterList[p]}' AND`
-            }
-        }
-        sql = sql.slice(0, sql.lastIndexOf(' AND'));
-    }else{        
-        if( onLine ){
-            sql = `SELECT * FROM dm_products WHERE onLine=${onLine}`;
-        }else{
-            sql = `SELECT * FROM dm_products`;
-        }
-    }
-    sql += ` ORDER BY startTime`;
-    pool.query(sql, null, (err, data) => {
-        if( err ){
-            res.status(503).send({
-                code: 2,
-                msg: err
-            })
-        }else{
-            let result = {
-                // current - 当前页
-                current: current - 1,
-                // 一页多少条数据
-                pageSize: pageSize ? parseInt(pageSize) : data.length,
-                // 数据总数
-                total: data.length
-            };           
-            
-            result.products = data.slice(result.current * result.pageSize, result.current * result.pageSize + result.pageSize);
-            result.current = result.current + 1;
-            res.send({
-                code: 200,
-                data: result,
-                
-            });
-        }
+    const brand_list = await new Promise((resolve, reject) => {
+        req?.pool?.query?.(
+            `SELECT * FROM dm_brands `,
+            null, 
+            (err, reuslt) => !err ? resolve(reuslt) : reject(err),
+        )
     })
+
+    const content = {};
+    reuslt.forEach(item => {
+        Object.entries(item).forEach(([key, value]) => {
+            let arr = lodash.uniqBy(value, key).map(item02 => item02[key]);
+            if(['brandId'].includes(key)) {
+                key = 'brands';
+                if(Array.isArray(brand_list)) {
+                    arr = brand_list.filter(item03 => arr.includes(String(item03?.id)));
+                }
+            }
+            content[key] = arr;
+        });
+    });
+
+    res.send({
+        code: "DM-000000",
+        content,
+    });
 });
 
 // 删除商品
@@ -112,7 +158,7 @@ router.delete('/delete/:id', (req, res) => {
         });
     }
     let sql = "DELETE FROM dm_products WHERE id=?";
-    pool.query(sql, [id], (err, data) => {
+    req?.pool?.query?.(sql, [id], (err, data) => {
         if( err ) throw err;
         if( data.affectedRows ){
             res.send({
@@ -222,7 +268,7 @@ router.put('/update', upload.any(), (req, res) => {
         }
         sql += ' WHERE id=?';
         await new Promise((resolve, reject) => {
-            pool.query(sql, params, (err, data) => {
+            req?.pool?.query?.(sql, params, (err, data) => {
                 if( err ){
                     throw err;
                 }else{
@@ -341,7 +387,7 @@ router.post('/add', upload.any(), (req, res) => {
             }
         }
 
-        pool.query(sql, params, (err, data) => {
+        req?.pool?.query?.(sql, params, (err, data) => {
             if( err ){
                 throw err;
             }else{
@@ -413,7 +459,7 @@ router.post('/push', (req, res) => {
         params = [100, id];
     }
     let sql = 'UPDATE dm_products SET onLine=? WHERE id=?';
-    pool.query(sql, params, (err, data) => {
+    req?.pool?.query?.(sql, params, (err, data) => {
         if( err ){
             throw err;
         }else{
@@ -438,7 +484,7 @@ router.post('/push', (req, res) => {
  */
 router.get('/select/pid', (req, res) => {
     const sql = 'SELECT id FROM dm_products';
-    pool.query(sql, null, (err, data) => {
+    req?.pool?.query?.(sql, null, (err, data) => {
         if(err){                    
             return res.status(503).send({
                 code: 2,

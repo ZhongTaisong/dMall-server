@@ -1,6 +1,5 @@
 const express = require('express');
 const router = express.Router();
-const pool = require('../pool');
 
 // 查询所有品牌
 router.post('/select', (req, res) => {
@@ -14,7 +13,7 @@ router.post('/select', (req, res) => {
     }
 
 	let sql = "SELECT * FROM dm_brands ORDER BY id DESC";
-	pool.query(sql, [], (err, data) => {
+	req?.pool?.query?.(sql, [], (err, data) => {
         if( err ){
             res.status(503).send({
                 code: 3,
@@ -52,7 +51,7 @@ router.post('/add', (req, res) => {
         return;
     }
 	let sql = "INSERT INTO dm_brands VALUES (NULL, ?)";
-	pool.query(sql, [ brandName ], (err, data) => {
+	req?.pool?.query?.(sql, [ brandName ], (err, data) => {
         if( err ){
             res.status(503).send({
                 code: 2,
@@ -93,7 +92,7 @@ router.put('/update', (req, res) => {
         return;
     }
 	let sql = "UPDATE dm_brands SET brandName=? WHERE id=?";
-	pool.query(sql, [brandName, id], (err, data) => {
+	req?.pool?.query?.(sql, [brandName, id], (err, data) => {
         if( err ){
             res.status(503).send({
                 code: 3,
@@ -127,7 +126,7 @@ router.delete('/delete/:id', (req, res) => {
         return;
     }
 	let sql = "DELETE FROM dm_brands WHERE id=?";
-	pool.query(sql, [id], (err, data) => {
+	req?.pool?.query?.(sql, [id], (err, data) => {
         if( err ){
             res.status(503).send({
                 code: 2,

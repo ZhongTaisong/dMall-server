@@ -1,6 +1,5 @@
 const express = require('express');
 const router = express.Router();
-const pool = require('../pool');
 
 // 添加收货地址 / 修改收货地址
 router.post('/edit', (req, res) => {
@@ -47,7 +46,7 @@ router.post('/edit', (req, res) => {
         if( isDefault ){
             await new Promise((resolve, reject) => {
                 sql = "UPDATE dm_address SET isDefault=? WHERE uname=?";
-                pool.query(sql, [0, uname], (err, data) => {
+                req?.pool?.query?.(sql, [0, uname], (err, data) => {
                     if(err) throw err;
                     resolve();
                 });
@@ -64,7 +63,7 @@ router.post('/edit', (req, res) => {
                 params = [name, region, detail, phone, isDefault ? 1 : 0, uname, id];
                 msg = '修改';
             }
-            pool.query(sql, params, (err, data) => {
+            req?.pool?.query?.(sql, params, (err, data) => {
                 if(err) throw err;
                 if( data.affectedRows ){
                     res.send({
@@ -95,7 +94,7 @@ router.get('/select', (req, res) => {
     }
     
     let sql = "SELECT * FROM dm_address WHERE uname=? ORDER BY id DESC";
-    pool.query(sql, [uname], (err, data) => {
+    req?.pool?.query?.(sql, [uname], (err, data) => {
         if(err) throw err;
         res.send({
             code: 200,
@@ -117,7 +116,7 @@ router.get('/delete', (req, res) => {
     }
     
     let sql = "DELETE FROM dm_address WHERE id=?";
-    pool.query(sql, [id], (err, data) => {
+    req?.pool?.query?.(sql, [id], (err, data) => {
         if(err) throw err;
         if( data.affectedRows ){    
             res.send({

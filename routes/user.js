@@ -1,6 +1,5 @@
 const express = require('express');
 const router = express.Router();
-const pool = require('../pool');
 const moment = require('moment');
 const fs = require('fs');
 
@@ -14,7 +13,7 @@ let upload = multer() // 文件储存路径
  */
 router.get('/select/uname', (req, res) => {
     const sql = 'SELECT uname FROM dm_user';
-    pool.query(sql, null, (err, data) => {
+    req?.pool?.query?.(sql, null, (err, data) => {
         if(err){                    
             return res.status(503).send({
                 code: 1,
@@ -40,7 +39,7 @@ router.get('/select/user-info', (req, res) => {
         return;
     }
     let sql = "SELECT id, uname, phone, avatar, gender, birthday, nickName FROM dm_user WHERE uname=?";
-    pool.query(sql, [uname], (err, data) => {
+    req?.pool?.query?.(sql, [uname], (err, data) => {
         if(err) throw err;
         if(data.length && data[0]){
             data[0]['nickName'] =  !data[0]['nickName'] && data[0]['uname'] ? data[0]['uname'] : data[0]['nickName'];
@@ -120,7 +119,7 @@ router.put('/update', upload.any(), (req, res) => {
         const { phone, gender, birthday, nickName } = userInfo;
         let sql = 'UPDATE dm_user SET phone=?, avatar=?, gender=?, birthday=?, nickName=? WHERE id=?';
         await new Promise((resolve, reject) => {
-            pool.query(sql, [phone, avatarList.toString(), gender, birthday, nickName, id], (err, data) => {
+            req?.pool?.query?.(sql, [phone, avatarList.toString(), gender, birthday, nickName, id], (err, data) => {
                 if(err) throw err;
                 if( data.affectedRows ){
                     res.send({
@@ -181,7 +180,7 @@ router.post('/add', upload.any(), (req, res) => {
 
     // 用户名是否已被注册？
     let sql01 = "SELECT uname FROM dm_user WHERE uname = ?";
-    pool.query(sql01, [uname], (err, result01) => {
+    req?.pool?.query?.(sql01, [uname], (err, result01) => {
         if( err ){
             res.status(503).send({
                 code: 3,
@@ -195,7 +194,7 @@ router.post('/add', upload.any(), (req, res) => {
                 });
             }else{
                 let sql02 = "INSERT INTO dm_user VALUES (NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-                pool.query(sql02, [
+                req?.pool?.query?.(sql02, [
                     uname, upwd, email, phone, avatar, pwdKey, gender, birthday, nickName, 0
                 ], (err, data) => {
                     if( err ){
@@ -250,7 +249,7 @@ router.put('/resetUpwd', (req, res) => {
     // 加密密码
     upwd = require('crypto').createHash('md5').update( upwd + ukey ).digest('hex');
     let sql = "UPDATE dm_user SET upwd=? WHERE id=?";    
-    pool.query(sql, [upwd, id], (err, data) => {
+    req?.pool?.query?.(sql, [upwd, id], (err, data) => {
         if( err ){
             res.status(503).send({
                 code: 4,
@@ -285,7 +284,7 @@ router.post('/select', (req, res) => {
     }
 
     let sql = "SELECT * FROM dm_user";
-    pool.query(sql, null, (err, data) => {
+    req?.pool?.query?.(sql, null, (err, data) => {
         if( err ){
             res.status(503).send({
                 code: 1,
@@ -326,7 +325,7 @@ router.delete('/delete/:id', (req, res) => {
         return;
     }
     let sql = "DELETE FROM dm_user WHERE id=?";
-    pool.query(sql, [id], (err, data) => {
+    req?.pool?.query?.(sql, [id], (err, data) => {
         if( err ){
             res.status(503).send({
                 code: 2,
@@ -394,7 +393,7 @@ router.post('/reg', (req, res) => {
     }
     // 用户名是否已被注册？
     let sql01 = "SELECT uname FROM dm_user WHERE uname = ?";
-    pool.query(sql01, [uname], (err, result01) => {
+    req?.pool?.query?.(sql01, [uname], (err, result01) => {
         if( err ){
             res.status(503).send({
                 code: 5,
@@ -409,7 +408,7 @@ router.post('/reg', (req, res) => {
             }else{
                 let sql02 = "INSERT INTO dm_user VALUES(NULL, ?, ?, ?, ?, NULL, ?, ?, ?, ?, ?)";
                 let time = moment( Date.now() ).format('YYYY-MM-DD HH:mm:ss');
-                pool.query(sql02, [uname, upwd, email, phone, pwdKey, 2, time, uname, 0], (err, result02) => {
+                req?.pool?.query?.(sql02, [uname, upwd, email, phone, pwdKey, 2, time, uname, 0], (err, result02) => {
                     if( err ){
                       res.status(503).send({
                         code: 6,
@@ -455,7 +454,7 @@ router.post('/log', (req, res) => {
     }
 
     let sql01 = "SELECT ukey FROM dm_user WHERE uname = ?";
-    pool.query(sql01, [ uname ], (err, data01) => {
+    req?.pool?.query?.(sql01, [ uname ], (err, data01) => {
         if( err ){
             res.status(503).send({
                 code: 3,
@@ -470,7 +469,7 @@ router.post('/log', (req, res) => {
           }else{
             upwd = require('crypto').createHash('md5').update( upwd + data01[0].ukey ).digest('hex');
             let sql02 = "SELECT * FROM dm_user WHERE uname = ? AND upwd = ?";
-            pool.query(sql02, [uname, upwd], (err, data02) => {
+            req?.pool?.query?.(sql02, [uname, upwd], (err, data02) => {
                 if( err ){
                   res.status(503).send({
                     code: 5,
@@ -519,7 +518,7 @@ router.post('/oauth', (req, res) => {
     }
 
     let sql = "SELECT uname, upwd, admin FROM dm_user WHERE upwd = ?";
-    pool.query(sql, [ token ], (err, data) => {
+    req?.pool?.query?.(sql, [ token ], (err, data) => {
         if( err ){
             res.status(503).send({
                 code: 2,
@@ -547,7 +546,7 @@ router.post('/oauth', (req, res) => {
 });
 
 // 退出登录
-router.post('/logout', async (req, res) => {
+router.patch('/logout', async (req, res) => {
     res.clearCookie('token');
     res.send({
         code: 200,
@@ -582,7 +581,7 @@ router.post('/vali/forgetPwd', (req, res) => {
         return;
     }    
     let sql = "SELECT email, phone, uname, upwd FROM dm_user WHERE uname=?";
-    pool.query(sql, [uname], (err, data) => {
+    req?.pool?.query?.(sql, [uname], (err, data) => {
         if( err ){
             res.status(503).send({
                 code: 4,
@@ -649,7 +648,7 @@ router.post('/update/upwd', (req, res) => {
     (async () => {
         const ukey = await new Promise((resolve, reject) => {
             let sql = "SELECT ukey FROM dm_user WHERE uname=?";
-            pool.query(sql, [uname], (err, data) => {
+            req?.pool?.query?.(sql, [uname], (err, data) => {
                 if(err) throw err;
                 if( !data.length ){
                     res.status(404).send({
@@ -667,7 +666,7 @@ router.post('/update/upwd', (req, res) => {
                 oldUpwd = require('crypto').createHash('md5').update(oldUpwd + ukey).digest('hex');
             }
             let sql = "SELECT uname FROM dm_user WHERE uname=? AND upwd=?";
-            pool.query(sql, [uname, oldUpwd], (err, data) => {
+            req?.pool?.query?.(sql, [uname, oldUpwd], (err, data) => {
                 if(err) throw err;
                 if( !data.length ){
                     res.status(404).send({
@@ -677,7 +676,7 @@ router.post('/update/upwd', (req, res) => {
                 }else{
                     newUpwd = require('crypto').createHash('md5').update(newUpwd + ukey).digest('hex');
                     sql = "UPDATE dm_user SET upwd=? WHERE uname=?";
-                    pool.query(sql, [newUpwd, uname], (err, data) => {
+                    req?.pool?.query?.(sql, [newUpwd, uname], (err, data) => {
                         if(err) throw err;
                         if( data.affectedRows ){
                             // 清除token

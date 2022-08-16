@@ -1,6 +1,5 @@
 const express = require('express');
 const router = express.Router();
-const pool = require('../pool');
 const moment = require('moment');
 const fs = require('fs');
 const kit = require('./../kit');
@@ -22,7 +21,7 @@ router.get('/select/uname', (req, res) => {
         return;
     }
     let sql = 'SELECT * FROM dm_admin WHERE uname=?';
-    pool.query(sql, [uname], (err, data) => {
+    req?.pool?.query?.(sql, [uname], (err, data) => {
         if(err){
             res.status(503).send({
                 code: 2,
@@ -52,7 +51,7 @@ router.post('/select', async (req, res) => {
     current = current - 1;
     const [result01, result02] = await kit.promiseAllSettled([
         new Promise((resolve, reject) => {
-            pool.query("SELECT COUNT(*) as total FROM dm_admin", null, (err, data) => {
+            req?.pool?.query?.("SELECT COUNT(*) as total FROM dm_admin", null, (err, data) => {
                 if(err){
                     return reject(err);
                 };
@@ -61,7 +60,7 @@ router.post('/select', async (req, res) => {
             });
         }),
         new Promise((resolve, reject) => {
-            pool.query("SELECT * FROM dm_admin LIMIT ?, ?", [current * pageSize, pageSize], (err, data) => {
+            req?.pool?.query?.("SELECT * FROM dm_admin LIMIT ?, ?", [current * pageSize, pageSize], (err, data) => {
                 if(err){
                     return reject(err);
                 };
@@ -144,7 +143,7 @@ router.post('/add', (req, res) => {
 
     params.push(current_uname);
     params.push(moment().format('YYYY-MM-DD HH:mm:ss'));
-    pool.query(`INSERT INTO dm_admin ${ sql_key } VALUES ${ sql_val }`, params, (err, data) => {
+    req?.pool?.query?.(`INSERT INTO dm_admin ${ sql_key } VALUES ${ sql_val }`, params, (err, data) => {
         if(err){
             return res.status(503).send({
                 code: 4,
@@ -153,7 +152,7 @@ router.post('/add', (req, res) => {
         };
 
         if(data.affectedRows){
-            pool.query(`UPDATE dm_user SET admin=? WHERE uname=?`, [1, uname], (err, result) => {
+            req?.pool?.query?.(`UPDATE dm_user SET admin=? WHERE uname=?`, [1, uname], (err, result) => {
                 if(err){
                     return res.status(503).send({
                         code: 5,
@@ -214,7 +213,7 @@ router.post('/update', (req, res) => {
         sql += `${ key }=${ val },`;
     });
     sql += `operator=${ current_uname },handleTime=${ moment().format('YYYY-MM-DD HH:mm:ss') }`;
-    pool.query(`UPDATE dm_admin SET ${ sql } WHERE id=${ id }`, null, (err, data) => {
+    req?.pool?.query?.(`UPDATE dm_admin SET ${ sql } WHERE id=${ id }`, null, (err, data) => {
         if(err){
             return res.status(503).send({
                 code: 4,
@@ -252,7 +251,7 @@ router.delete('/delete/:id', (req, res) => {
         });
     }
 
-    pool.query("DELETE FROM dm_admin WHERE id=?", [id], (err, data) => {
+    req?.pool?.query?.("DELETE FROM dm_admin WHERE id=?", [id], (err, data) => {
         if( err ){
             return res.status(503).send({
                 code: 3,
@@ -261,7 +260,7 @@ router.delete('/delete/:id', (req, res) => {
         }
 
         if( data.affectedRows ){
-            pool.query("UPDATE dm_user SET admin=? WHERE uname=?", [0, uname], (err, result) => {
+            req?.pool?.query?.("UPDATE dm_user SET admin=? WHERE uname=?", [0, uname], (err, result) => {
                 if(err){
                     return res.status(503).send({
                         code: 4,
@@ -300,7 +299,7 @@ router.get("/select/role/uname", async (req, res) => {
 
     const [result01, result02, result03] = await kit.promiseAllSettled([
         new Promise((resolve, reject) => {
-            pool.query("SELECT uname FROM dm_user", null, (err, data) => {
+            req?.pool?.query?.("SELECT uname FROM dm_user", null, (err, data) => {
                 if(err){                    
                     return reject(err);
                 };
@@ -309,7 +308,7 @@ router.get("/select/role/uname", async (req, res) => {
             });
         }),
         new Promise((resolve, reject) => {
-            pool.query("SELECT uname FROM dm_admin", null, (err, data) => {
+            req?.pool?.query?.("SELECT uname FROM dm_admin", null, (err, data) => {
                 if(err){                    
                     return reject(err);
                 };
@@ -318,7 +317,7 @@ router.get("/select/role/uname", async (req, res) => {
             });
         }),
         new Promise((resolve, reject) => {
-            pool.query(`SELECT role FROM dm_admin WHERE uname="${ uname }"`, null, (err, data) => {
+            req?.pool?.query?.(`SELECT role FROM dm_admin WHERE uname="${ uname }"`, null, (err, data) => {
                 if(err){                    
                     return reject(err);
                 };

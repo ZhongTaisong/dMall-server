@@ -1,12 +1,11 @@
 const express = require('express');
 const router = express.Router();
-const pool = require('../pool');
 
 // 查字典
 router.get('/selectDic', (req, res) => {
     let tableDic = {};
 	let sql = "SELECT * FROM dm_brands";
-	pool.query(sql, [], (err, data) => {
+	req?.pool?.query?.(sql, [], (err, data) => {
         if( err ){
             res.status(503).send({
                 code: 1,

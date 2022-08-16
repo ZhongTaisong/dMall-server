@@ -1,6 +1,5 @@
 const express = require('express');
 const router = express.Router();
-const pool = require('../pool');
 const moment = require('moment');
 
 // 喜欢 / 不喜欢
@@ -21,7 +20,7 @@ router.post('/update/agree', (req, res) => {
 
     let sql = 'UPDATE dm_comment SET agree=?, disagree=? WHERE id=?';
     let msg = type == 'agree' ? '喜欢' : '不喜欢';
-    pool.query(sql, [agreeNum, disagreeNum, id], (err, data) => {
+    req?.pool?.query?.(sql, [agreeNum, disagreeNum, id], (err, data) => {
         if(err) throw err;
         if(data.affectedRows){
             res.send({
@@ -52,7 +51,7 @@ router.get('/select/pid', (req, res) => {
         let sql, avatarArr=[];
         const commentArr = await new Promise((resolve, reject) => {
             sql = "SELECT * FROM dm_comment WHERE pid=?";
-            pool.query(sql, [pid], (err, data) => {
+            req?.pool?.query?.(sql, [pid], (err, data) => {
                 if(err) throw err;
                 resolve(data);
             });
@@ -62,7 +61,7 @@ router.get('/select/pid', (req, res) => {
             await new Promise((resolve, reject) => {
                 commentArr.forEach((item, index) => {
                     sql = `SELECT uname, avatar FROM dm_user WHERE uname='${item.uname}'`;
-                    pool.query(sql, null, (err, data) => {
+                    req?.pool?.query?.(sql, null, (err, data) => {
                         if(err) throw err;
                         data && data.length && data[0] && avatarArr.push(data[0]);
                         avatarArr.length == commentArr.length && resolve();
@@ -99,7 +98,7 @@ router.get('/select/products', (req, res) => {
         return;
     }
     let sql = "SELECT id, mainPicture, description, price, spec FROM dm_products WHERE id=?";
-    pool.query(sql, [id], (err, data) => {
+    req?.pool?.query?.(sql, [id], (err, data) => {
         if(err) throw err;
         res.send({
             code: 200,
@@ -142,7 +141,7 @@ router.post('/add', (req, res) => {
 
     let commentTime = moment(Date.now()).format('YYYY-MM-DD HH:mm:ss');
     let sql = "INSERT INTO dm_comment VALUES (NULL, ?, ?, ?, ?, ?, ?)";
-    pool.query(sql, [uname, pid, content, commentTime, 0, 0], (err, data) => {
+    req?.pool?.query?.(sql, [uname, pid, content, commentTime, 0, 0], (err, data) => {
         if(err) throw err;
         if( data.affectedRows ){
             res.send({
@@ -170,7 +169,7 @@ router.delete('/delete/:id', (req, res) => {
         return;
     }
     let sql = "DELETE FROM dm_comment WHERE id=?";
-    pool.query(sql, [id], (err, data) => {
+    req?.pool?.query?.(sql, [id], (err, data) => {
         if( err ){
             res.status(503).send({
               code: 2,
@@ -213,7 +212,7 @@ router.put('/update', (req, res) => {
 
     let commentTime = moment(Date.now()).format('YYYY-MM-DD HH:mm:ss');
     let sql01 = "UPDATE dm_comment SET content=?, commentTime=? WHERE id = ?";
-    pool.query(sql01, [content, commentTime, id], (err, data) => {
+    req?.pool?.query?.(sql01, [content, commentTime, id], (err, data) => {
         if( err ){
             res.status(503).send({
                 code: 4,
@@ -256,7 +255,7 @@ router.post('/select', (req, res) => {
     }
 
     let sql = "SELECT * FROM dm_comment";
-    pool.query(sql, null, (err, data) => {
+    req?.pool?.query?.(sql, null, (err, data) => {
         if(err) throw err;
         let result = {
             // current - 当前页

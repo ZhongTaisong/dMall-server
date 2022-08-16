@@ -1,6 +1,5 @@
 const express = require("express");
 const router = express.Router();
-const pool = require("../pool");
 const moment = require('moment');
 const kit = require('./../kit');
 const config = require('./../config');
@@ -18,7 +17,7 @@ router.delete('/delete/:id', (req, res) => {
         });
     }
 
-    pool.query(
+    req?.pool?.query?.(
         `DELETE FROM dm_order WHERE id=${ id }`, 
         null, 
         (err, result) => {
@@ -58,7 +57,7 @@ router.get('/detail/:id', async (req, res) => {
     }
 
     const result01 = await new Promise((resolve, reject) => {
-        pool.query(
+        req?.pool?.query?.(
             `SELECT ordernum, aid, pid, submitTime, num, totalprice, nums FROM dm_order WHERE id=${ id }`, 
             null, 
             (err, reuslt) => {
@@ -77,7 +76,7 @@ router.get('/detail/:id', async (req, res) => {
 
     const [result02, result03] = await kit.promiseAllSettled([
         new Promise((resolve, reject) => {
-            pool.query(
+            req?.pool?.query?.(
                 `SELECT name, region, detail, phone FROM dm_address WHERE id=${ result01?.aid }`, 
                 null, 
                 (err, reuslt) => {
@@ -88,7 +87,7 @@ router.get('/detail/:id', async (req, res) => {
             )
         }),
         new Promise((resolve, reject) => {
-            pool.query(
+            req?.pool?.query?.(
                 `SELECT mainPicture, description, spec, price, id FROM dm_products WHERE id IN (${ result01?.pid })`, 
                 null, 
                 (err, reuslt) => {
@@ -161,12 +160,12 @@ router.post('/add', (req, res) => {
     let ordernum = moment(Date.now()).format('YYYYMMDDHHmmss');
     let submitTime = moment(Date.now()).format('YYYY-MM-DD HH:mm:ss');
     let sql = 'INSERT INTO dm_order VALUES (NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
-    pool.query(sql, [uname, ordernum, 100, aid, pid, submitTime, num, totalprice, nums], (err, data) => {
+    req?.pool?.query?.(sql, [uname, ordernum, 100, aid, pid, submitTime, num, totalprice, nums], (err, data) => {
         if(err) throw err;
         if( data.affectedRows ){
             // 提交订单成功后，删除购物车表被结算成功的数据
             sql = `DELETE FROM dm_cart WHERE pid IN (${pid})`;
-            pool.query(sql, null, (err, result) => {
+            req?.pool?.query?.(sql, null, (err, result) => {
                 if(err) throw err;
                 res.send({
                     code: 200,
@@ -223,7 +222,7 @@ router.post('/select/settlement', (req,res) => {
         let result = {};
         await new Promise((resolve, reject) => {
             let sql = 'SELECT * FROM dm_address WHERE uname=?';
-            pool.query(sql, [uname], (err, data)=>{
+            req?.pool?.query?.(sql, [uname], (err, data)=>{
                 if(err) throw err;
                 result['address'] = data;
                 resolve();
@@ -238,7 +237,7 @@ router.post('/select/settlement', (req,res) => {
                 sql = 'SELECT c.*, p.mainPicture, p.description, p.spec, p.price FROM dm_cart c, dm_products p WHERE c.pid=p.id AND c.uname=? AND p.id IN (?) AND collection=0';
                 params = [uname, id];
             }
-            pool.query(sql, params, (err, data)=>{
+            req?.pool?.query?.(sql, params, (err, data)=>{
                 if(err) throw err;
                 result['productsInfo'] = data;
                 resolve();
@@ -257,9 +256,7 @@ router.post('/select/settlement', (req,res) => {
 router.post('/select', async (req, res) => {
 	const { 
         current = 0, 
-        pageSize = config?.PAGE_SIZE, 
-        id, 
-        oIndex,
+        pageSize = config?.PAGE_SIZE,
     } = req.body || {};
     const { uname } = req.headers || {};
     const setErrCode = kit.joinErrCode("RDER-SELECT");
@@ -301,17 +298,17 @@ router.post('/select', async (req, res) => {
 
     const [total, order_list] = await kit.promiseAllSettled([
         new Promise((resolve, reject) => {
-            pool.query(
+            req?.pool?.query?.(
                 `SELECT COUNT(*) as total FROM dm_order WHERE uname="${ uname }"`,
                 null, 
-                (err, reuslt) =>!err ? resolve(reuslt?.[0]?.total || 0) : reject(err),
+                (err, reuslt) => !err ? resolve(reuslt?.[0]?.total || 0) : reject(err),
             );
         }),
         new Promise((resolve, reject) => {
-            pool.query(
+            req?.pool?.query?.(
                 `SELECT * FROM dm_order WHERE uname="${ uname }" ORDER BY submitTime DESC LIMIT ${ current }, ${ pageSize }`,
                 null, 
-                (err, reuslt) =>!err ? resolve(reuslt) : reject(err),
+                (err, reuslt) => !err ? resolve(reuslt) : reject(err),
             );
         }),
     ]);
@@ -327,10 +324,10 @@ router.post('/select', async (req, res) => {
     order_list.forEach(item => {
         promise_list.push(
             new Promise((resolve, reject) => {
-                pool.query(
+                req?.pool?.query?.(
                     `SELECT id, mainPicture, description, spec, price FROM dm_products WHERE id IN (${ item?.pid })`, 
                     null, 
-                    (err, reuslt) =>!err ? resolve(reuslt) : reject(err),
+                    (err, reuslt) => !err ? resolve(reuslt) : reject(err),
                 )
             })
         );
@@ -393,7 +390,7 @@ router.post('/select', async (req, res) => {
 //             if( !uname ){
 //                 await new Promise((resolve, reject) => {
 //                     sql = "SELECT id, uname, ordernum, submitTime, num, totalprice FROM dm_order ORDER BY submitTime DESC";
-//                     pool.query(sql, null, (err, data) => {
+//                     req?.pool?.query?.(sql, null, (err, data) => {
 //                         if(err) throw err;
 //                         // 一页多少条数据
 //                         result['pageSize'] = pageSize ? parseInt(pageSize) : (data.length ? data.length : current);
@@ -408,7 +405,7 @@ router.post('/select', async (req, res) => {
 //                 const orders = await new Promise((resolve, reject) => {
 //                     sql = "SELECT * FROM dm_order WHERE uname=? ORDER BY submitTime DESC";
 //                     params = [uname];
-//                     pool.query(sql, params, (err, data) => {
+//                     req?.pool?.query?.(sql, params, (err, data) => {
 //                         if(err) throw err;
 //                         resolve(data);
 //                     })
@@ -419,7 +416,7 @@ router.post('/select', async (req, res) => {
 //                     if(orders.length) {
 //                       orders.map((item, index) => {
 //                           sql = `SELECT id, mainPicture, description, spec, price FROM dm_products WHERE id IN (${item.pid})`;
-//                           pool.query(sql, null, (err, data) => {
+//                           req?.pool?.query?.(sql, null, (err, data) => {
 //                               if(err) throw err;
 //                               let nums = item.nums ? item.nums.split(',') : [];
 //                               data.map((d, i) => {
@@ -476,7 +473,7 @@ router.post('/select', async (req, res) => {
 //         }
 
 //         let sql = "SELECT * FROM dm_order WHERE id=? AND uname=?";
-//         pool.query(sql, [id, uname], (err, data01) => {
+//         req?.pool?.query?.(sql, [id, uname], (err, data01) => {
 //             if(err) throw err;
 //             if(data01.length) {
 //                 let d = data01[0];
@@ -489,7 +486,7 @@ router.post('/select', async (req, res) => {
 //                 delete d.aid;
 //                 delete d.id;
 //                 sql = "SELECT id, mainPicture, price, description, spec FROM dm_products WHERE id=?";
-//                 pool.query(sql, [ pid[oIndex] ], (err, data02) => {
+//                 req?.pool?.query?.(sql, [ pid[oIndex] ], (err, data02) => {
 //                     if(err) throw err;
 //                     if(data02.length) {
 //                         const { price } = data02[0] || {};

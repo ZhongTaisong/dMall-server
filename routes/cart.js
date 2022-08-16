@@ -1,6 +1,5 @@
 const express=require("express");
 const router=express.Router();
-const pool=require("../pool");
 
 // 删除购物车 - 指定商品 / 全部商品
 router.post('/delete', (req, res) => {
@@ -21,7 +20,7 @@ router.post('/delete', (req, res) => {
         return;
     }
     let sql = "DELETE FROM dm_cart WHERE id IN(?) AND uname = ?";
-    pool.query(sql, [ids, uname], (err, result) => {
+    req?.pool?.query?.(sql, [ids, uname], (err, result) => {
         if(err) throw err;
         if( result.affectedRows ){
             res.send({
@@ -72,7 +71,7 @@ router.post('/update/num', (req,res) => {
     }
 
     let sql = "UPDATE dm_cart SET num=?, totalprice=? WHERE id=? AND uname=?";
-    pool.query(sql, [ num, totalprice, id, uname ], (err, result) => {
+    req?.pool?.query?.(sql, [ num, totalprice, id, uname ], (err, result) => {
         if( err ) throw err;
         if( result.affectedRows ){
             res.send({
@@ -115,7 +114,7 @@ router.get('/select', (req, res) => {
         return;
     }
     let sql = 'SELECT c.*, p.productName, p.mainPicture, p.description, p.spec, p.price FROM dm_cart c, dm_products p WHERE c.pid=p.id AND c.uname=? AND c.collection=?';
-    pool.query(sql, [uname, collection], (err, data) => {
+    req?.pool?.query?.(sql, [uname, collection], (err, data) => {
         if( err ) throw err;
         res.send({
             code: 200,
@@ -146,13 +145,13 @@ router.post('/add', (req,res) => {
 
     list.forEach(item => {
         let sql = 'SELECT num, totalprice FROM dm_cart WHERE pid=? AND collection=0 AND uname=?';
-        pool.query(sql, [item.pid, uname], (err, data) => {
+        req?.pool?.query?.(sql, [item.pid, uname], (err, data) => {
             if(err) throw err;
             if( data.length ){
                 let num = data[0].num ? data[0].num+item.num : data[0].num;
                 let totalprice = data[0].totalprice ? data[0].totalprice+item.totalprice : data[0].totalprice;
                 sql = 'UPDATE dm_cart SET num=?, totalprice=? WHERE pid=? AND collection=0 AND uname=?';
-                pool.query(sql, [num, totalprice, item.pid, uname], (err, data) => {
+                req?.pool?.query?.(sql, [num, totalprice, item.pid, uname], (err, data) => {
                     if(err) throw err;
                     if( data.affectedRows ){
                         res.send({
@@ -169,7 +168,7 @@ router.post('/add', (req,res) => {
                 })                        
             }else{
                 sql = 'INSERT INTO dm_cart VALUES (NULL, ?, ?, ?, ?, ?)';
-                pool.query(sql, [uname, item.pid, item.num, item.totalprice, 0], (err, data) => {
+                req?.pool?.query?.(sql, [uname, item.pid, item.num, item.totalprice, 0], (err, data) => {
                     if(err) throw err;
                     if( data.affectedRows ){
                         res.send({
@@ -200,7 +199,7 @@ router.get('/select/num', (req, res) => {
         return;
     }
     let sql = 'SELECT num FROM dm_cart WHERE uname=? AND collection=0';
-    pool.query(sql, [uname], (err, data) => {
+    req?.pool?.query?.(sql, [uname], (err, data) => {
         if( err ){
             res.status(503).send({
                 code: 2,
@@ -239,7 +238,7 @@ router.get('/select/spec', (req, res) => {
     }
 
     let sql = 'SELECT id, spec, price FROM dm_products WHERE brandId=(SELECT brandId FROM dm_products WHERE id=?)';
-    pool.query(sql, [pid], (err, data) => {
+    req?.pool?.query?.(sql, [pid], (err, data) => {
         if( err ){
             res.status(503).send({
                 code: 2,
@@ -289,7 +288,7 @@ router.post('/update/spec', (req, res) => {
     }
     const totalprice = Number(price) * Number(num);
     let sql = 'UPDATE dm_cart SET pid=?, totalprice=? WHERE id=?';
-    pool.query(sql, [pid, totalprice, id], (err, data) => {
+    req?.pool?.query?.(sql, [pid, totalprice, id], (err, data) => {
         if( err ){
             res.status(503).send({
                 code: 5,
@@ -323,7 +322,7 @@ router.get('/select/address', (req, res) => {
     }
     
     let sql = "SELECT region, detail FROM dm_address WHERE uname=? AND isDefault=1";
-    pool.query(sql, [uname], (err, data) => {
+    req?.pool?.query?.(sql, [uname], (err, data) => {
         if(err) throw err;
         res.send({
             code: 200,

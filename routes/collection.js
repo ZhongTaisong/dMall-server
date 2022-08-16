@@ -1,6 +1,5 @@
 const express=require("express");
 const router=express.Router();
-const pool=require("../pool");
 
 // 加入收藏 / 加入购物车
 router.post('/add', (req, res) => {
@@ -43,11 +42,11 @@ router.post('/add', (req, res) => {
         await new Promise((resolve, reject) => {
             ids.forEach(item => {
                 sql = "SELECT * FROM dm_cart WHERE pid=( SELECT pid FROM dm_cart WHERE id=? AND uname=?) AND collection=? AND uname=?";
-                pool.query(sql, [item, uname, collection, uname], (err, data) => {
+                req?.pool?.query?.(sql, [item, uname, collection, uname], (err, data) => {
                     if(err) throw err;
                     if( data.length ){
                         sql = "DELETE FROM dm_cart WHERE id=?";
-                        pool.query(sql, [item], (err, result) => {
+                        req?.pool?.query?.(sql, [item], (err, result) => {
                             if(err) throw err;
                             if( !result.affectedRows ){
                                 isSuccess = false;
@@ -55,7 +54,7 @@ router.post('/add', (req, res) => {
                         })
                     }else{
                         sql = "UPDATE dm_cart SET collection=? WHERE id=? AND uname=?";
-                        pool.query(sql, [collection, item, uname], (err, result) => {
+                        req?.pool?.query?.(sql, [collection, item, uname], (err, result) => {
                             if(err) throw err;
                             if( !result.affectedRows ){
                                 isSuccess = false;
