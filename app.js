@@ -6,11 +6,11 @@ const cookieParser = require('cookie-parser');
 const logger = require('morgan');
 const helmet = require('helmet');
 const pool = require('./pool');
-const config = require('./config');
+const auth = require('./auth');
 // 引入路由模块
-const indexRouter = require('./routes/index.js');
-const productRouter = require('./routes/product.js');
-const detailRouter = require('./routes/detail.js');
+const homeRouter = require('./routes/home.js');
+const goodsListRouter = require('./routes/goods-list.js');
+const goodsDetailRouter = require('./routes/goods-detail.js');
 const userRouter = require('./routes/user.js');
 const cartRouter = require('./routes/cart.js');
 const commentRouter = require('./routes/comment.js');
@@ -21,7 +21,6 @@ const collectionRouter = require('./routes/collection.js');
 const addressRouter = require('./routes/address.js');
 const messageRouter = require('./routes/message.js');
 const adminRouter = require('./routes/admin.js');
-const publicRouter = require('./routes/public.js');
 const app = express();
 
 // 视图模板引擎 - 配置
@@ -49,54 +48,17 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use('/api', express.static(path.join(__dirname, 'public')));
 
+// 用户认证 - 操作
 app.all("*", (req, res, next) => {
-    const { token, uname } = req?.headers || {};
-
-    if(/^(\/api\/public)/.test(req?.path)) {
-        return next();
-    }
-
-    if(!uname) {
-        return res.status(401).send({
-            code: "DM-000001",
-            msg: '认证失败!',
-        });
-    }
-
-    if (!token) {
-        return res.status(401).send({
-            code: "DM-000002",
-            msg: '认证失败!',
-        });
-    }
-    
-    pool.query(
-        `SELECT * FROM dm_user WHERE upwd=${ token } AND uname=${ uname }`, 
-        null, 
-        (err, result) => {
-            if(err) {
-                return res.status(500).send({
-                    code: "DM-000003",
-                    msg: '操作失败!',
-                    error: err,
-                });
-            };
-
-            if(!data?.length) {
-                return res.status(401).send({
-                    code: "DM-000004",
-                    msg: '登录token已失效, 请重新登录!',
-                });
-            }
-
-            next();
-        }
-    );
+    // 将pool挂在到req上
+    req.pool = pool;
+    return auth(req, res, next);
 });
 
-app.use('/api/index', indexRouter);
-app.use('/api/products', productRouter);
-app.use('/api/details', detailRouter);
+// 接口路由
+app.use('/api/home', homeRouter);
+app.use('/api/goods-list', goodsListRouter);
+app.use('/api/goods-detail', goodsDetailRouter);
 app.use('/api/users', userRouter);
 app.use('/api/cart', cartRouter);
 app.use('/api/comment', commentRouter);
@@ -107,7 +69,6 @@ app.use('/api/collection', collectionRouter);
 app.use('/api/address', addressRouter);
 app.use('/api/message', messageRouter);
 app.use('/api/admin', adminRouter);
-app.use('/api/public', publicRouter);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
