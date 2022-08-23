@@ -2,30 +2,101 @@ const express = require('express');
 const router = express.Router();
 const moment = require('moment');
 const fs = require('fs');
+const md5 = require('crypto').createHash('md5');
 
 // multer上传图片相关设置
 const multer  = require('multer');
 const dest = 'public/img';
 let upload = multer() // 文件储存路径
+// 路由器标识
+const ROUTER_Flag = "USER";
 
 /**
  * 查询 - 所有用户名
  */
-router.get('/select/uname', (req, res) => {
-    const sql = 'SELECT uname FROM dm_user';
-    req?.pool?.query?.(sql, null, (err, data) => {
-        if(err){                    
-            return res.status(503).send({
-                code: 1,
-                msg: err
-            });
-        };
-
-        res.send({
-            code: 200,
-            data: data?.map?.(item => item?.uname) || [],
-        });
+router.get('/select/uname', async (req, res) => {
+    const content = await new Promise((resolve, reject) => {
+        req?.pool?.query?.(
+            `SELECT uname FROM dm_user`, 
+            null,
+            (err, reuslt) => !err ? resolve(reuslt?.map?.(item => item?.uname)) : reject(err),
+        )
     });
+
+    res.status(200).send({
+        code: "DM-000000",
+        content,
+    });
+});
+
+/**
+ * 登录
+ */
+router.post('/public/login', async (req, res) => {
+    const { uname, upwd } = req.body || {};
+    if(!uname){
+        return res.status(400).send({
+            code: `DM-${ ROUTER_Flag }-000001`,
+            msg: 'uname不能为空!',
+        });
+    }
+
+    if(!upwd){
+        return res.status(400).send({
+            code: `DM-${ ROUTER_Flag }-000002`,
+            msg: 'upwd不能为空!',
+        });
+    }
+
+    const reuslt01 = await new Promise((resolve, reject) => {
+        req?.pool?.query?.(
+            `SELECT ukey FROM dm_user WHERE uname=?`, 
+            [ uname ],
+            (err, reuslt) => !err ? resolve(reuslt?.[0]?.ukey || null) : reject(err),
+        )
+    });
+
+    if(!reuslt01) {
+        return res.status(400).send({
+            code: `DM-${ ROUTER_Flag }-000003`,
+            msg: '用户名不存在!',
+        });
+    }
+
+    const new_upwd = md5.update(`${ upwd }${ reuslt01 }`).digest('hex');
+    const reuslt02 = await new Promise((resolve, reject) => {
+        req?.pool?.query?.(
+            `SELECT * FROM dm_user WHERE uname=? AND upwd=?`, 
+            [ uname, new_upwd ],
+            (err, reuslt) => !err ? resolve(reuslt) : reject(err),
+        )
+    });
+
+    if(!Array.isArray(reuslt02) || !reuslt02.length) {
+        return res.status(500).send({
+            code: `DM-${ ROUTER_Flag }-000004`,
+            msg: '密码错误!',
+        });
+    }
+
+    const content = reuslt02?.[0] || {};
+    content['token'] = content['upwd'];
+    delete content['upwd'];
+    delete content['ukey'];
+    res.status(200).send({
+        code: "DM-000000",
+        content,
+    });
+});
+
+// 退出登录
+router.patch('/logout', async (req, res) => {
+    res.clearCookie('token');
+    res.send({
+        code: 200,
+        data: '',
+        msg: '退出登录成功'
+    })
 });
 
 // 查询指定用户
@@ -434,78 +505,6 @@ router.post('/reg', (req, res) => {
     });
 });
 
-// 登录
-router.post('/log', (req, res) => {
-    let { upwd, isUser, uname, isRemember } = req.body || {};
-    // isUser 用户中心 - 登录密码
-    if( !uname ){
-        res.status(400).send({
-          code: 1,
-          msg: '用户名不能为空！'
-        })
-        return;
-    }
-    if( !upwd ){
-        res.status(400).send({
-          code: 2,
-          msg: '密码不能为空！'
-        })
-        return;
-    }
-
-    let sql01 = "SELECT ukey FROM dm_user WHERE uname = ?";
-    req?.pool?.query?.(sql01, [ uname ], (err, data01) => {
-        if( err ){
-            res.status(503).send({
-                code: 3,
-                msg: err
-            })
-        }else{
-          if( !data01.length ){
-            res.status(404).send({
-                code: 4,
-                msg: '用户名不存在！'
-            })
-          }else{
-            upwd = require('crypto').createHash('md5').update( upwd + data01[0].ukey ).digest('hex');
-            let sql02 = "SELECT * FROM dm_user WHERE uname = ? AND upwd = ?";
-            req?.pool?.query?.(sql02, [uname, upwd], (err, data02) => {
-                if( err ){
-                  res.status(503).send({
-                    code: 5,
-                    msg: err
-                  })
-                }else{
-                    if( data02.length ){
-                        const { upwd, ukey, ...rest } = data02?.[0] || {};
-                        if( !isUser ){
-                            res.send({
-                                code: 200,
-                                data: {
-                                    ...rest,
-                                    token: upwd,
-                                },
-                                msg: '恭喜你，登录成功！'
-                            });
-                        }else{
-                            res.send({
-                                code: 200,
-                                data: null,
-                            });
-                        }
-                    }else{
-                        res.status(404).send({
-                            code: 6,
-                            msg: '密码错误！'
-                        })
-                    }
-                }
-            });
-          }
-        }
-    });
-});
-
 // token认证
 router.post('/oauth', (req, res) => {
     const { token } = req.headers || {};
@@ -543,16 +542,6 @@ router.post('/oauth', (req, res) => {
             }
         }
     });
-});
-
-// 退出登录
-router.patch('/logout', async (req, res) => {
-    res.clearCookie('token');
-    res.send({
-        code: 200,
-        data: '',
-        msg: '退出登录成功'
-    })
 });
 
 // 忘记密码 - 信息验证

@@ -84,7 +84,7 @@ router.post('/public/select', async (req, res) => {
         );
     });
 
-    res.send({
+    res.status(200).send({
         code: "DM-000000",
         content: {
             dataSource,
@@ -142,7 +142,7 @@ router.get('/public/select/filter', async (req, res) => {
         });
     });
 
-    res.send({
+    res.status(200).send({
         code: "DM-000000",
         content,
     });

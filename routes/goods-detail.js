@@ -1,13 +1,12 @@
 const express = require('express');
 const router = express.Router();
-const kit = require('./../kit');
 // 路由器标识
 const ROUTER_Flag = "GOODS_DETAIL";
 
 /**
  * 查询 - 商品详情
  */
-router.get("/select/:id", async (req, res) => {
+router.get("/public/select/:id", async (req, res) => {
     const { id } = req?.params || {};
     if(!id){
         return res.status(400).send({
@@ -20,73 +19,43 @@ router.get("/select/:id", async (req, res) => {
         req?.pool?.query?.(
             `SELECT * FROM dm_products WHERE id=${ id }`, 
             null,
-            (err, reuslt) => !err ? resolve(reuslt) : reject(err),
+            (err, reuslt) => !err ? resolve(reuslt?.[0] || {}) : reject(err),
         )
     });
 
-    // const result02 = await new Promise((resolve, reject) => {
-    //     req?.pool?.query?.(
-    //         `SELECT id, spec FROM dm_products WHERE brandId=${ }`, 
-    //         null,
-    //         (err, reuslt) => !err ? resolve(reuslt) : reject(err),
-    //     )
-    // });
+    const result02 = await new Promise((resolve, reject) => {
+        req?.pool?.query?.(
+            `SELECT id, spec FROM dm_products WHERE brandId=${ result01?.brandId }`, 
+            null,
+            (err, reuslt) => !err ? resolve(reuslt) : reject(err),
+        )
+    });
+    
+    let images = [];
+    let detailImgs = [];
+    if(result01 && Object.keys(result01).length) {
+        const { mainPicture, pictures, detailsPic } = result01;
 
-    res.send({
+        images = pictures?.split?.("|") || [];
+        delete result01['pictures'];
+        detailImgs = detailsPic?.split?.("|") || [];
+        delete result01['detailsPic'];
+        if(mainPicture) {
+            images.unshift(mainPicture);
+            delete result01['mainPicture'];
+        }
+
+
+    }
+    result01['images'] = images;
+    result01['detailImgs'] = detailImgs;
+    result01['specs'] = result02;
+    delete result01['spec'];
+
+    res.status(200).send({
         code: "DM-000000",
-        err: result01,
         content: result01,
     });
+});
 
-    // (async () => {
-    //     let obj = {}
-    //     // 查询当前商品id下的数据
-    //     await new Promise((resolve, reject) => {
-    //         let sql = '';
-    //         req?.pool?.query?.(sql, [id], (err, data) => {
-    //             if(err) throw err;
-    //             if( data.length ){
-    //                 const { id, brandId, mainPicture, pictures, productName, description, copywriting, price, spec, detailsPic, ...rest } = data[0] || {};
-    //                 obj = {                        
-    //                     imgList: [mainPicture, ...(pictures ? pictures.split('|') : [])],
-    //                     basicInfo: { id, brandId, productName, description, copywriting, price, spec },
-    //                     params: {id, brandId, productName, ...rest},
-    //                     detailsPic: [ ...(detailsPic ? detailsPic.split('|') : []) ]
-    //                 }
-    //                 resolve();
-    //             }else{
-    //                 res.send({
-    //                     code: 2,
-    //                     msg: '当前商品数据不存在！'
-    //                 })
-    //             }
-    //         })  
-    //     })
-    //     // 查询同一品牌的商品规格
-    //     await new Promise((resolve, reject) => {
-    //         const { basicInfo } = obj || {};
-    //         let sql = '';
-    //         req?.pool?.query?.(sql, [basicInfo.brandId], (err, data) => {
-    //             if(err) throw err;
-    //             if( data.length ){
-    //                 obj = { ...obj,                        
-    //                     specs: data
-    //                 }
-    //                 resolve();
-    //             }else{
-    //                 res.send({
-    //                     code: 2,
-    //                     msg: '当前商品规格不存在！'
-    //                 })
-    //             }
-    //         })  
-    //     })
-    //     res.send({
-    //         code: 200,
-    //         data: obj,
-            
-    //     })
-    // })()
-})
-
-module.exports=router;
+module.exports = router;

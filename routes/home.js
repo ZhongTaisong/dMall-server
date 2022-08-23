@@ -19,7 +19,7 @@ router.get('/public/hot-recommendations', (req, res) => {
                 });
             };
 
-            res.send({
+            res.status(200).send({
                 code: "DM-000000",
                 content: result,
             });
@@ -43,7 +43,7 @@ router.get('/public/single-product-promotion', (req, res) => {
                 });
             };
 
-            res.send({
+            res.status(200).send({
                 code: "DM-000000",
                 content: result,
             });
@@ -67,7 +67,7 @@ router.get('/public/large-scale-promotion', (req, res) => {
                 });
             };
 
-            res.send({
+            res.status(200).send({
                 code: "DM-000000",
                 content: result,
             });

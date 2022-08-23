@@ -4,6 +4,8 @@ const moment = require('moment');
 const kit = require('./../kit');
 const config = require('./../config');
 const lodash = require('lodash');
+// 路由器标识
+const ROUTER_Flag = "HOME";
 
 /**
  * 订单 - 删除
@@ -259,39 +261,38 @@ router.post('/select', async (req, res) => {
         pageSize = config?.PAGE_SIZE,
     } = req.body || {};
     const { uname } = req.headers || {};
-    const setErrCode = kit.joinErrCode("RDER-SELECT");
 
     if(!uname) {
         return res.status(400).send({
-            code: setErrCode("001"),
+            code: `DM-${ ROUTER_Flag }-000001`,
             msg: '请求头必须携带uname, 且不能为空!',
         });
     }
 
     if(typeof current !== 'number'){
         return res.status(400).send({
-            code: setErrCode("002"),
+            code: `DM-${ ROUTER_Flag }-000002`,
             msg: 'current是Number类型!',
         });
     }
 
     if(current < 0) {
         return res.status(400).send({
-            code: setErrCode("003"),
+            code: `DM-${ ROUTER_Flag }-000003`,
             msg: 'current大于等于0!',
         });
     }
 
     if(typeof pageSize !== 'number'){
         return res.status(400).send({
-            code: setErrCode("004"),
+            code: `DM-${ ROUTER_Flag }-000004`,
             msg: 'pageSize是Number类型!',
         });
     }
 
     if(pageSize < 1) {
         return res.status(400).send({
-            code: setErrCode("005"),
+            code: `DM-${ ROUTER_Flag }-000005`,
             msg: 'pageSize大于等于1!',
         });
     }
@@ -315,7 +316,7 @@ router.post('/select', async (req, res) => {
 
     if(!Array.isArray(order_list)) {
         return res.status(400).send({
-            code: setErrCode("006"),
+            code: `DM-${ ROUTER_Flag }-000006`,
             msg: '操作失败!',
         });
     }
@@ -336,7 +337,7 @@ router.post('/select', async (req, res) => {
     let goods_infos_all = await kit.promiseAllSettled(promise_list);
     if(!Array.isArray(goods_infos_all)) {
         return res.status(400).send({
-            code: setErrCode("007"),
+            code: `DM-${ ROUTER_Flag }-000007`,
             msg: '操作失败!',
         });
     }else {
