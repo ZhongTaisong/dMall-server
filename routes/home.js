@@ -83,7 +83,7 @@ router.get('/kw', (req,res) => {
     req?.pool?.query?.(sql, [ks], (err, data) => {
         if(err) throw err;
         res.send({
-            code: 200,
+            code: "DM-000000",
             data,
             
         })

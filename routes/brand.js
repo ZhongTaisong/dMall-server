@@ -32,7 +32,7 @@ router.post('/select', (req, res) => {
             result.products = data.slice(result.current * result.pageSize, result.current * result.pageSize + result.pageSize);
             result.current = result.current + 1;
             res.send({
-                code: 200,
+                code: "DM-000000",
                 data: result,
                 
             });
@@ -60,7 +60,7 @@ router.post('/add', (req, res) => {
         }else{
             if( data.affectedRows ){
                 res.send({
-                    code: 200,
+                    code: "DM-000000",
                     data: null,
                     msg: '添加品牌成功'
                 })
@@ -101,7 +101,7 @@ router.put('/update', (req, res) => {
         }else{
             if( data.affectedRows ){
                 res.send({
-                    code: 200,
+                    code: "DM-000000",
                     data: null,
                     msg: '修改品牌成功'
                 })
@@ -135,7 +135,7 @@ router.delete('/delete/:id', (req, res) => {
         }else{
             if( data.affectedRows ){
                 res.send({
-                    code: 200,
+                    code: "DM-000000",
                     data: null,
                     msg: '删除品牌成功'
                 })

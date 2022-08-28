@@ -162,7 +162,7 @@ router.delete('/delete/:id', (req, res) => {
         if( err ) throw err;
         if( data.affectedRows ){
             res.send({
-                code: 200,
+                code: "DM-000000",
                 data: null,
                 msg: '删除商品成功'
             })
@@ -283,7 +283,7 @@ router.put('/update', upload.any(), (req, res) => {
                         //     });
                         // })
                         res.send({
-                            code: 200,
+                            code: "DM-000000",
                             data: null,
                             msg: '修改商品成功'
                         })
@@ -393,7 +393,7 @@ router.post('/add', upload.any(), (req, res) => {
             }else{
                 if( data.affectedRows ){
                     res.send({
-                        code: 200,
+                        code: "DM-000000",
                         data: null,
                         msg: '添加商品成功'
                     })
@@ -465,7 +465,7 @@ router.post('/push', (req, res) => {
         }else{
             if( data.affectedRows ){
                 res.send({
-                    code: 200,
+                    code: "DM-000000",
                     data: null,
                     msg: msg01
                 })
@@ -493,7 +493,7 @@ router.get('/select/pid', (req, res) => {
         }
 
         res.send({
-            code: 200,
+            code: "DM-000000",
             data: data?.map?.(item => item?.id) || [],
         });
     });

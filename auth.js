@@ -23,8 +23,8 @@ module.exports = (req, res, next) => {
     }
     
     req?.pool?.query?.(
-        `SELECT * FROM dm_user WHERE upwd=${ token } AND uname=${ uname }`, 
-        null, 
+        `SELECT * FROM dm_user WHERE upwd=? AND uname=?`, 
+        [ token, uname ], 
         (err, result) => {
             if(err) {
                 return res.status(500).send({

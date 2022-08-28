@@ -24,7 +24,7 @@ router.post('/update/agree', (req, res) => {
         if(err) throw err;
         if(data.affectedRows){
             res.send({
-                code: 200,
+                code: "DM-000000",
                 data: null
             })
         }else{
@@ -67,7 +67,7 @@ router.post('/add', (req, res) => {
         if(err) throw err;
         if( data.affectedRows ){
             res.send({
-                code: 200,
+                code: "DM-000000",
                 data: null,
                 msg: '留言成功'
             })
@@ -100,7 +100,7 @@ router.get('/delete/:id', (req, res) => {
         }else{
             if( data.affectedRows ){
                 res.send({
-                    code: 200,
+                    code: "DM-000000",
                     data: null,
                     msg: '删除用户留言成功'
                 })
@@ -149,7 +149,7 @@ router.get('/select', (req, res) => {
         })
 
         res.send({
-            code: 200,
+            code: "DM-000000",
             data: arr,
             
         });

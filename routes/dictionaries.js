@@ -17,7 +17,7 @@ router.get('/selectDic', (req, res) => {
                 tableDic['BRAND_LIST'] = {...tableDic['BRAND_LIST'], [value['id']]: value.brandName}
             }
             res.send({
-                code: 200,
+                code: "DM-000000",
                 data: tableDic,
                 
             })

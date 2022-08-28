@@ -29,7 +29,7 @@ router.get('/select/uname', (req, res) => {
             })
         };
         res.send({
-            code: 200,
+            code: "DM-000000",
             data: data[0] || {},
             
         });
@@ -79,7 +79,7 @@ router.post('/select', async (req, res) => {
     })
 
     res.send({
-        code: 200,
+        code: "DM-000000",
         data: {
             current: current + 1,
             pageSize,
@@ -162,7 +162,7 @@ router.post('/add', (req, res) => {
 
                 if( result.affectedRows ){
                     res.send({
-                        code: 200,
+                        code: "DM-000000",
                         data: null,
                         msg: `添加权限成功`
                     })
@@ -223,7 +223,7 @@ router.post('/update', (req, res) => {
 
         if(data.affectedRows){
             res.send({
-                code: 200,
+                code: "DM-000000",
                 data: null,
                 msg: `更新权限成功！`,
             })
@@ -270,7 +270,7 @@ router.delete('/delete/:id', (req, res) => {
 
                 if( result.affectedRows ){
                     res.send({
-                        code: 200,
+                        code: "DM-000000",
                         data: null,
                         msg: '删除用户权限成功'
                     })
@@ -333,7 +333,7 @@ router.get("/select/role/uname", async (req, res) => {
 
     const uname_list = result01.filter(item => !result02.some(item02 => item02?.uname === item));
     res.send({
-        code: 200,
+        code: "DM-000000",
         data: {
             uname_list,
             role_list: result03,

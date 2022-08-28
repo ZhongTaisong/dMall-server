@@ -144,7 +144,7 @@ router.get('/select/products', (req, res) => {
     req?.pool?.query?.(sql, [id], (err, data) => {
         if(err) throw err;
         res.send({
-            code: 200,
+            code: "DM-000000",
             data: data.length ? data[0] : {},
             
         });
@@ -188,7 +188,7 @@ router.post('/add', (req, res) => {
         if(err) throw err;
         if( data.affectedRows ){
             res.send({
-                code: 200,
+                code: "DM-000000",
                 data: null,
                 msg: '评价成功'
             })
@@ -221,7 +221,7 @@ router.delete('/delete/:id', (req, res) => {
         }else{
             if( data.affectedRows ){
                 res.send({
-                    code: 200,
+                    code: "DM-000000",
                     data: null,
                     msg: '删除用户评价成功'
                 })
@@ -264,7 +264,7 @@ router.put('/update', (req, res) => {
         }else{
             if( data.affectedRows ){
                 res.send({
-                  code: 200,
+                  code: "DM-000000",
                   data: null,
                   msg: '修改评价成功！'
                 })
@@ -312,7 +312,7 @@ router.post('/select', (req, res) => {
         result.products = data.reverse().slice(result.current * result.pageSize, result.current * result.pageSize + result.pageSize);
         result.current = result.current + 1;
         res.send({
-            code: 200,
+            code: "DM-000000",
             data: result,
             
         });

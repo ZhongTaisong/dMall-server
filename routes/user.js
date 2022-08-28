@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const moment = require('moment');
 const fs = require('fs');
-const md5 = require('crypto').createHash('md5');
+const crypto = require('crypto');
 
 // multer上传图片相关设置
 const multer  = require('multer');
@@ -63,7 +63,7 @@ router.post('/public/login', async (req, res) => {
         });
     }
 
-    const new_upwd = md5.update(`${ upwd }${ reuslt01 }`).digest('hex');
+    const new_upwd = crypto.createHash('md5').update(`${ upwd }${ reuslt01 }`).digest('hex');
     const reuslt02 = await new Promise((resolve, reject) => {
         req?.pool?.query?.(
             `SELECT * FROM dm_user WHERE uname=? AND upwd=?`, 
@@ -73,7 +73,7 @@ router.post('/public/login', async (req, res) => {
     });
 
     if(!Array.isArray(reuslt02) || !reuslt02.length) {
-        return res.status(500).send({
+        return res.status(404).send({
             code: `DM-${ ROUTER_Flag }-000004`,
             msg: '密码错误!',
         });
@@ -93,7 +93,7 @@ router.post('/public/login', async (req, res) => {
 router.patch('/logout', async (req, res) => {
     res.clearCookie('token');
     res.send({
-        code: 200,
+        code: "DM-000000",
         data: '',
         msg: '退出登录成功'
     })
@@ -116,7 +116,7 @@ router.get('/select/user-info', (req, res) => {
             data[0]['nickName'] =  !data[0]['nickName'] && data[0]['uname'] ? data[0]['uname'] : data[0]['nickName'];
         }
         res.send({
-            code: 200,
+            code: "DM-000000",
             data: data ? data[0] : {},
             
         });
@@ -194,7 +194,7 @@ router.put('/update', upload.any(), (req, res) => {
                 if(err) throw err;
                 if( data.affectedRows ){
                     res.send({
-                        code: 200,
+                        code: "DM-000000",
                         data: null,
                         msg: '修改用户成功'
                     })
@@ -276,7 +276,7 @@ router.post('/add', upload.any(), (req, res) => {
                     }else{
                         if( data.affectedRows ){
                             res.send({
-                                code: 200,
+                                code: "DM-000000",
                                 data: null,
                                 msg: '添加用户成功'
                             })
@@ -329,7 +329,7 @@ router.put('/resetUpwd', (req, res) => {
         }else{
             if( data.affectedRows ){
                 res.send({
-                    code: 200,
+                    code: "DM-000000",
                     data: null,
                     msg: '重置用户密码成功'
                 })
@@ -377,7 +377,7 @@ router.post('/select', (req, res) => {
             result.products = data.reverse().slice(result.current * result.pageSize, result.current * result.pageSize + result.pageSize);
             result.current = result.current + 1;
             res.send({
-                code: 200,
+                code: "DM-000000",
                 data: result,
                 
             });
@@ -412,7 +412,7 @@ router.delete('/delete/:id', (req, res) => {
             // });
             if( data.affectedRows ){
                 res.send({
-                    code: 200,
+                    code: "DM-000000",
                     data: null,
                     msg: '删除用户成功'
                 })
@@ -488,7 +488,7 @@ router.post('/reg', (req, res) => {
                     }else{
                         if( result02.affectedRows ){
                             res.send({
-                                code: 200,
+                                code: "DM-000000",
                                 data: uname,
                                 msg: '恭喜你，注册成功！'
                             });
@@ -526,7 +526,7 @@ router.post('/oauth', (req, res) => {
         }else{
             if( data.length ){
                 res.send({
-                    code: 200,
+                    code: "DM-000000",
                     data: {
                         uname: data[0].uname,
                         token: data[0].upwd,
@@ -591,7 +591,7 @@ router.post('/vali/forgetPwd', (req, res) => {
                 }else{
                     const { uname, upwd } = (data && data[0]) || {};
                     res.send({
-                        code: 200,
+                        code: "DM-000000",
                         data: {
                             uname, oldUpwd: upwd
                         },
@@ -671,7 +671,7 @@ router.post('/update/upwd', (req, res) => {
                             // 清除token
                             res.clearCookie('token');
                             res.send({
-                                code: 200,
+                                code: "DM-000000",
                                 data: uname,
                                 msg: '登录密码修改成功'
                             })

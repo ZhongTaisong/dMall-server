@@ -24,7 +24,7 @@ router.post('/delete', (req, res) => {
         if(err) throw err;
         if( result.affectedRows ){
             res.send({
-                code: 200,
+                code: "DM-000000",
                 data: null,
                 msg: '删除成功'
             })
@@ -75,7 +75,7 @@ router.post('/update/num', (req,res) => {
         if( err ) throw err;
         if( result.affectedRows ){
             res.send({
-                code: 200,
+                code: "DM-000000",
                 data: null
             })
         }else{
@@ -117,7 +117,7 @@ router.get('/select', (req, res) => {
     req?.pool?.query?.(sql, [uname, collection], (err, data) => {
         if( err ) throw err;
         res.send({
-            code: 200,
+            code: "DM-000000",
             data,
             
         })
@@ -155,7 +155,7 @@ router.post('/add', (req,res) => {
                     if(err) throw err;
                     if( data.affectedRows ){
                         res.send({
-                            code: 200,
+                            code: "DM-000000",
                             data: null,
                             msg: '加入购物车成功'
                         })
@@ -172,7 +172,7 @@ router.post('/add', (req,res) => {
                     if(err) throw err;
                     if( data.affectedRows ){
                         res.send({
-                            code: 200,
+                            code: "DM-000000",
                             data: null,
                             msg: '加入购物车成功'
                         })
@@ -211,13 +211,13 @@ router.get('/select/num', (req, res) => {
                     return total + item.num;
                 }, 0)
                 res.send({
-                    code: 200,
+                    code: "DM-000000",
                     data: total,
                     
                 })
             }else{                
                 res.send({
-                    code: 200,
+                    code: "DM-000000",
                     data: 0,
                     
                 })
@@ -246,7 +246,7 @@ router.get('/select/spec', (req, res) => {
             })
         }else{
             res.send({
-                code: 200,
+                code: "DM-000000",
                 data,
                 
             })
@@ -297,7 +297,7 @@ router.post('/update/spec', (req, res) => {
         }else{
             if( data.affectedRows ){
                 res.send({
-                    code: 200,
+                    code: "DM-000000",
                     data: null
                 })
             }else{
@@ -325,7 +325,7 @@ router.get('/select/address', (req, res) => {
     req?.pool?.query?.(sql, [uname], (err, data) => {
         if(err) throw err;
         res.send({
-            code: 200,
+            code: "DM-000000",
             data: data[0] || {}            
         })
     });

@@ -67,7 +67,7 @@ router.post('/edit', (req, res) => {
                 if(err) throw err;
                 if( data.affectedRows ){
                     res.send({
-                        code: 200,
+                        code: "DM-000000",
                         data: null,
                         msg: `收货地址${msg}成功`
                     })
@@ -97,7 +97,7 @@ router.get('/select', (req, res) => {
     req?.pool?.query?.(sql, [uname], (err, data) => {
         if(err) throw err;
         res.send({
-            code: 200,
+            code: "DM-000000",
             data,
             
         })
@@ -120,7 +120,7 @@ router.get('/delete', (req, res) => {
         if(err) throw err;
         if( data.affectedRows ){    
             res.send({
-                code: 200,
+                code: "DM-000000",
                 data: null,
                 msg: '删除收货地址成功'
             });
