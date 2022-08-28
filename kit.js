@@ -1,3 +1,5 @@
+const crypto = require('crypto');
+
 /**
  * 获取 - 请求成功后的数据
  * @param {*} obj 
@@ -25,4 +27,14 @@ exports.promiseAllSettled = (data) => {
 
         return result.map((item) => this.fnGetPromiseValue(item)) || [];
     });
-}
+};
+
+/**
+ * md5加密
+ * @param {*} val 
+ * @returns 
+ */
+exports.md5 = (val) => {
+    const md5 = crypto.createHash('md5');
+    return md5.update(val).digest('hex');
+};

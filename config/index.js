@@ -24,3 +24,15 @@ exports.REQUEST_URL_WHITE_LIST = [
     '/api/users/logout',
     '/api/message/select'
 ];
+
+/**
+ * 公共接口 - 正则匹配
+ * 
+ * 注：不需要验证访问权限
+ */
+exports.PUBLIC_PATH = ["//"];
+
+/**
+ * 私钥
+ */
+exports.SECRET_KEY = "雨色轻风意，柔情怜花殇";

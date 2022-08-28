@@ -2,7 +2,10 @@ const express = require('express');
 const router = express.Router();
 const moment = require('moment');
 const fs = require('fs');
+const config = require('./../config');
 const crypto = require('crypto');
+// 生成token
+const jwt = require('jsonwebtoken');
 
 // multer上传图片相关设置
 const multer  = require('multer');
@@ -80,7 +83,9 @@ router.post('/public/login', async (req, res) => {
     }
 
     const content = reuslt02?.[0] || {};
-    content['token'] = content['upwd'];
+    const tokenStr = jwt.sign({ uname, }, config.SECRET_KEY, { expiresIn: 60 * 60 * 60 });
+    content['token'] = `Bearer ${ tokenStr }`;
+
     delete content['upwd'];
     delete content['ukey'];
     res.status(200).send({
