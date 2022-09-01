@@ -30,7 +30,7 @@ exports.REQUEST_URL_WHITE_LIST = [
  * 
  * 注：不需要验证访问权限
  */
-exports.PUBLIC_PATH = ["//"];
+exports.PUBLIC_PATH = /\/public\//;
 
 /**
  * 私钥

@@ -9,7 +9,7 @@ const helmet = require('helmet');
 const { expressjwt } = require('express-jwt');
 const pool = require('./pool');
 const config = require('./config');
-const auth = require('./auth');
+const kit = require('./kit');
 // 引入路由模块
 const homeRouter = require('./routes/home.js');
 const goodsListRouter = require('./routes/goods-list.js');
@@ -53,21 +53,32 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use('/api', express.static(path.join(__dirname, 'public')));
 
-// 将pool挂在到req上
-app.all("*", (req, res, next) => {
+/** 将pool挂在到req上 */
+app.use((req, res, next) => {
   req.pool = pool;
   next();
 });
 
-// 验证token
+/** 验证token */
 app.use(
   expressjwt({ 
     secret: config.SECRET_KEY, 
     algorithms: ['HS256'],
-  }).unless({ path: [/\/public\//] })
+  }).unless({ path: [config.PUBLIC_PATH,] })
 );
 
-// 接口路由
+
+app.use((req, res, next) => {
+  const { authorization, } = req.headers;
+  const isExist = kit.isJWTInvalid(authorization);
+  if(isExist && !config.PUBLIC_PATH.test(req.url)) {
+    next(createError(401));
+  }else {
+    next();
+  }
+});
+
+/** 接口路由 */
 app.use('/api/home', homeRouter);
 app.use('/api/goods-list', goodsListRouter);
 app.use('/api/goods-detail', goodsDetailRouter);
@@ -105,7 +116,7 @@ app.use(function(err, req, res, next) {
   res.render('error');
 });
 
-// 自定义端口号
+/** 自定义端口号 */
 process.env.PORT = '8000';
 
 module.exports = app;
