@@ -22,7 +22,7 @@ const dictionariesRouter = require('./routes/dictionaries.js');
 const orderRouter = require('./routes/order.js');
 const collectionRouter = require('./routes/collection.js');
 const addressRouter = require('./routes/address.js');
-const messageRouter = require('./routes/message.js');
+const messageBoardRouter = require('./routes/message-board.js');
 const adminRouter = require('./routes/admin.js');
 const app = express();
 // 路由器标识
@@ -90,7 +90,7 @@ app.use('/api/dic', dictionariesRouter);
 app.use('/api/order', orderRouter);
 app.use('/api/collection', collectionRouter);
 app.use('/api/address', addressRouter);
-app.use('/api/message', messageRouter);
+app.use('/api/message-board', messageBoardRouter);
 app.use('/api/admin', adminRouter);
 
 // catch 404 and forward to error handler
