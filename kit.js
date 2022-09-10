@@ -2,6 +2,7 @@ const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 const lodash = require('lodash');
+const uuid = require('uuid');
 const redisClient = require('./redis-client');
 
 /**
@@ -146,4 +147,12 @@ exports.setRedisExpireTime = (key, value) => {
     if(typeof value !== 'number') return;
 
     redisClient.EXPIRE(key, value);
+}
+
+/**
+ * 生成随机id
+ * @returns 
+ */
+exports.getUuid = () => {
+    return uuid.v4();
 }

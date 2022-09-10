@@ -1,18 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const moment = require('moment');
-const uuid = require('uuid');
-const fs = require('fs');
-const crypto = require('crypto');
 // 生成token
 const jwt = require('jsonwebtoken');
 const config = require('./../config');
 const kit = require('./../kit');
-
-// multer上传图片相关设置
-const multer  = require('multer');
-const dest = 'public/img';
-let upload = multer() // 文件储存路径
 // 路由器标识
 const ROUTER_Flag = "USER";
 
@@ -176,7 +168,7 @@ router.post('/public/validate', async (req, res) => {
         }
 
         // 生成 - 临时验证通过凭证
-        const _uuid = uuid.v4();
+        const _uuid = kit.getUuid()
         // 存入redis
         kit.setRedisHashValue(_uuid, {
             uname, email, phone,
@@ -262,255 +254,88 @@ router.patch('/public/update/password', async (req, res) => {
     }
 })
 
-// 重置用户密码
-router.put('/resetUpwd', (req, res) => {
-    let { id, upwd, ukey } = req.body || {};
-    if( !id ){
-        res.status(400).send({
-            code: 1,
-            msg: 'uid不能为空'
-        });
-        return;
-    }
-    if( !upwd ){
-        res.status(400).send({
-            code: 2,
-            msg: 'upwd不能为空'
-        });
-        return;
-    }
-    if( !ukey ){
-        res.status(400).send({
-            code: 3,
-            msg: 'ukey不能为空'
-        });
-        return;
-    }
-    // 加密密码
-    upwd = require('crypto').createHash('md5').update( upwd + ukey ).digest('hex');
-    let sql = "UPDATE dm_user SET upwd=? WHERE id=?";    
-    req?.pool?.query?.(sql, [upwd, id], (err, data) => {
-        if( err ){
-            res.status(503).send({
-                code: 4,
-                msg: err
-            })
-        }else{
-            if( data.affectedRows ){
-                res.send({
-                    code: "DM-000000",
-                    data: null,
-                    msg: '重置用户密码成功'
-                })
-            }else{
-                res.send({
-                    code: 5,
-                    msg: '重置用户密码失败'
-                })
-            }
-        }
-    })
-});
-
-// 查询所有用户
-router.post('/select', (req, res) => {
-	let { current=1, pageSize } = req.body || {};
-    if( !current ){
-        res.status(400).send({
-            code: 1,
-            msg: 'current不能为空,且大于0'
-        })
-        return;
-    }
-
-    let sql = "SELECT * FROM dm_user";
-    req?.pool?.query?.(sql, null, (err, data) => {
-        if( err ){
-            res.status(503).send({
-                code: 1,
-                msg: err
-            })
-        }else{
-            data.forEach(item => {
-                delete item.upwd;
-            })
-            let result = {
-                // current - 当前页
-                current: current - 1,
-                // 一页多少条数据
-                pageSize: pageSize ? parseInt(pageSize) : data.length,
-                // 数据总数
-                total: data.length
-            };           
-            
-            result.products = data.reverse().slice(result.current * result.pageSize, result.current * result.pageSize + result.pageSize);
-            result.current = result.current + 1;
-            res.send({
-                code: "DM-000000",
-                data: result,
-                
+/**
+ * 注册
+ */
+router.post('/public/register', async (req, res) => {
+    try {
+        const { uname, upwd, confirmUpwd, email, phone } = req.body || {};
+        if(!uname){
+            return res.status(400).send({
+                code: `DM-${ ROUTER_Flag }-000019`,
+                msg: 'uname不能为空!',
+            });
+        }else if(uname.length < 2 || uname.length > 64) {
+            return res.status(400).send({
+                code: `DM-${ ROUTER_Flag }-000025`,
+                msg: 'uname限制在2到64个字符!',
             });
         }
-    });
-});
 
-// 删除用户
-router.delete('/delete/:id', (req, res) => {
-    let { id } = req.params || {};
-    if( !id ){
-        res.status(400).send({
-            code: 1,
-            msg: 'uid不能为空'
+        if(!upwd){
+            return res.status(400).send({
+                code: `DM-${ ROUTER_Flag }-000020`,
+                msg: 'upwd不能为空!',
+            });
+        }
+
+        if(!confirmUpwd){
+            return res.status(400).send({
+                code: `DM-${ ROUTER_Flag }-000021`,
+                msg: 'confirmUpwd不能为空!',
+            });
+        }
+
+        if(!email){
+            return res.status(400).send({
+                code: `DM-${ ROUTER_Flag }-000022`,
+                msg: 'email不能为空!',
+            });
+        }
+
+        if(!phone){
+            return res.status(400).send({
+                code: `DM-${ ROUTER_Flag }-000023`,
+                msg: 'phone不能为空!',
+            });
+        }
+
+        const isUname = await new Promise((resolve, reject) => {
+            req?.pool?.query?.(
+                "SELECT uname FROM dm_user WHERE uname=?", 
+                [uname],
+                (err, data) => !err ? resolve(Boolean(data?.length)) : reject(err),
+            )
         });
-        return;
-    }
-    let sql = "DELETE FROM dm_user WHERE id=?";
-    req?.pool?.query?.(sql, [id], (err, data) => {
-        if( err ){
-            res.status(503).send({
-                code: 2,
-                msg: err
-            })
-        }else{
-            // avatar && fs.exists(`public/${avatar}`, exists => {
-            //     if( exists ){
-            //         fs.unlink(`public/${avatar}`, (err) => {
-            //             if( err ) throw err;
-            //         });
-            //     }
-            // });
-            if( data.affectedRows ){
-                res.send({
-                    code: "DM-000000",
-                    data: null,
-                    msg: '删除用户成功'
-                })
-            }else{
-                res.send({
-                    code: 3,
-                    msg: '删除用户失败'
-                })
-            }
+        if(isUname) {
+            return res.status(404).send({
+                code: `DM-${ ROUTER_Flag }-000024`,
+                msg: '此用户名已被注册!',
+            });
         }
-    })
-});
 
-// 注册
-router.post('/reg', (req, res) => {
-    // 随机key值
-    const pwdKey = Math.random().toString().slice(2);
-    const { uname } = req.headers || {};
-    let { upwd, email, phone } = req.body || {};
-    if( !uname ){
-        res.status(400).send({
-          code: 1,
-          msg: '用户名不能为空！'
-        })
-        return;
+        const pwdKey = kit.getUuid();
+        const date = moment(Date.now()).format('YYYY-MM-DD HH:mm:ss');
+        const nickName = uname;
+        await new Promise((resolve, reject) => {
+            req?.pool?.query?.(
+                "INSERT INTO dm_user VALUES(NULL, ?, ?, ?, ?, NULL, ?, ?, ?, ?, ?)", 
+                [uname, kit.md5(`${ upwd }${ pwdKey }`), email, phone, pwdKey, 2, date, nickName, 0],
+                (err, data) => !err ? resolve(data) : reject(err),
+            )
+        });
+        
+        res.status(200).send({
+            code: "DM-000000",
+            msg: "恭喜你，注册成功!",
+        });
+    } catch (error) {
+        res.status(500).send({
+            code: `DM-${ ROUTER_Flag }-000018`,
+            msg: '操作失败!',
+            error,
+        });
     }
-    if( !upwd ){
-        res.status(400).send({
-          code: 2,
-          msg: '密码不能为空！'
-        })
-        return;
-    }else{
-        upwd = require('crypto').createHash('md5').update( upwd + pwdKey ).digest('hex');
-    }
-    if( !email ){
-        res.status(400).send({
-          code: 3,
-          msg: '邮箱不能为空！'
-        })
-        return;
-    }
-    if( !phone ){
-        res.status(400).send({
-          code: 4,
-          msg: '手机号码不能为空！'
-        })
-        return;
-    }
-    // 用户名是否已被注册？
-    let sql01 = "SELECT uname FROM dm_user WHERE uname = ?";
-    req?.pool?.query?.(sql01, [uname], (err, result01) => {
-        if( err ){
-            res.status(503).send({
-                code: 5,
-                msg: err
-            })
-        }else{
-            if( result01.length ){
-                res.send({
-                    code: 201,
-                    msg: '此用户名已被注册！'
-                });
-            }else{
-                let sql02 = "INSERT INTO dm_user VALUES(NULL, ?, ?, ?, ?, NULL, ?, ?, ?, ?, ?)";
-                let time = moment( Date.now() ).format('YYYY-MM-DD HH:mm:ss');
-                req?.pool?.query?.(sql02, [uname, upwd, email, phone, pwdKey, 2, time, uname, 0], (err, result02) => {
-                    if( err ){
-                      res.status(503).send({
-                        code: 6,
-                        msg: err
-                      })
-                    }else{
-                        if( result02.affectedRows ){
-                            res.send({
-                                code: "DM-000000",
-                                data: uname,
-                                msg: '恭喜你，注册成功！'
-                            });
-                        }else{
-                            res.status(404).send({
-                                code: 7,
-                                msg: '很遗憾，注册失败！'
-                            })
-                        }
-                    }
-                });
-            }
-        }
-    });
-});
-
-// token认证
-router.post('/oauth', (req, res) => {
-    const { token } = req.headers || {};
-    if( !token ){
-        res.send({
-            code: 401,
-            msg: '认证token不存在，重新登录！'
-        })
-        return;
-    }
-
-    let sql = "SELECT uname, upwd, admin FROM dm_user WHERE upwd = ?";
-    req?.pool?.query?.(sql, [ token ], (err, data) => {
-        if( err ){
-            res.status(503).send({
-                code: 2,
-                msg: err
-            })
-        }else{
-            if( data.length ){
-                res.send({
-                    code: "DM-000000",
-                    data: {
-                        uname: data[0].uname,
-                        token: data[0].upwd,
-                        admin: data[0].admin
-                    },
-                    msg: '认证通过'
-                })
-            }else{
-                res.send({
-                    code: 401,
-                    msg: '认证token不存在，重新登录！'
-                })
-            }
-        }
-    });
 });
 
 module.exports = router;
