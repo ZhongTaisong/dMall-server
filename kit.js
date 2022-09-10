@@ -1,6 +1,8 @@
 const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
+const lodash = require('lodash');
+const redisClient = require('./redis-client');
 
 /**
  * 获取 - 请求成功后的数据
@@ -77,3 +79,71 @@ exports.isJWTInvalid = (data) => {
     const content = fs.readFileSync(jwt_blacklist_path).toString();
     return content.includes(data);
 };
+
+/**
+ * redis存储 - String类型值
+ */
+exports.setRedisStringValue = (key, value) => {
+    if(typeof value !== 'string') return;
+
+    redisClient.SET(key, value);
+}
+
+/**
+ * redis获取 - String值
+ * @param {*} key 
+ */
+exports.getRedisStringValue = async (key) => {
+    const value = await redisClient.GET(key);
+    return value;
+}
+
+/**
+ * redis存储 - Hash值
+ */
+exports.setRedisHashValue = (key, value) => {
+    if(!lodash.isPlainObject(value)) return;
+
+    Object.entries(value).forEach(([fields, val]) => {
+        redisClient.HSET(key, fields, val);
+    });
+}
+
+/**
+ * redis获取 - Hash单个值
+ * @param {*} key 
+ * @param {*} fields 
+ */
+exports.getRedisHashValue = async (key, fields) => {
+    const value = await redisClient.HGET(key, fields);
+    return value;
+}
+
+/**
+ * redis获取 - Hash所有值
+ * @param {*} key 
+ * @param {*} fields 
+ */
+exports.getRedisHashValueAll = async (key) => {
+    const value = await redisClient.hGetAll(key);
+    return value;
+}
+
+/**
+ * redis - 查看哈希表 key 中，指定的字段是否存在。
+ * @param {*} key 
+ * @param {*} fields 
+ * @returns 
+ */
+exports.isRedisHashValue = (key, fields) => {
+    return redisClient.hExists(key, fields);
+}
+
+/**
+ * redis - 设置失效时间
+ */
+exports.setRedisExpireTime = (key, value) => {
+    if(typeof value !== 'number') return;
+
+    redisClient.EXPIRE(key, value);
+}

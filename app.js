@@ -67,15 +67,17 @@ app.use(
   }).unless({ path: [config.PUBLIC_PATH,] })
 );
 
-
-app.use((req, res, next) => {
-  const { authorization, } = req.headers;
-  const isExist = kit.isJWTInvalid(authorization);
-  if(isExist && !config.PUBLIC_PATH.test(req.url)) {
-    next(createError(401));
-  }else {
-    next();
+/** 当“退出登录”时，验证token是否在jwt黑名单中 */
+app.use(async (req, res, next) => {
+  const { authorization, uname, } = req.headers;
+  if(!config.PUBLIC_PATH.test(req.url)) {
+    const pwd = await kit.getRedisHashValue(config.REDIS_KEY.DMALL_JWT_BLACKLIST, uname);
+    if(pwd === authorization.slice(7)) {
+      return next(createError(401));
+    }
   }
+
+  next();
 });
 
 /** 接口路由 */

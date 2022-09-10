@@ -36,3 +36,11 @@ exports.PUBLIC_PATH = /\/public\//;
  * 私钥
  */
 exports.SECRET_KEY = "雨色轻风意，柔情怜花殇";
+
+/**
+ * redis数据库key
+ */
+exports.REDIS_KEY = {
+    // 登录token失效黑名单
+    DMALL_JWT_BLACKLIST: "dmall_jwt_blacklist",
+}
