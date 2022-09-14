@@ -1,29 +1,9 @@
+const PORT = 8000;
+
 /**
  * 表格 - 每页条数
  */
 exports.PAGE_SIZE = 10;
-
-/**
- * 接口 - 白名单
- */
-exports.REQUEST_URL_WHITE_LIST = [
-    '/api/index/onepush',
-    '/api/index/banner',
-    '/api/index/hot',
-    '/api/products/select',
-    '/api/index/kw',
-    '/api/users/log',
-    '/api/users/vali/forgetPwd',
-    '/api/users/update/upwd',
-    '/api/users/reg',
-    '/api/details/select',
-    '/api/cart/select/num',
-    '/api/comment/select/pid',
-    '/api/dic/selectDic',
-    '/api/products/select/filter',
-    '/api/users/logout',
-    '/api/message/select'
-];
 
 /**
  * 公共接口 - 正则匹配
@@ -44,3 +24,13 @@ exports.REDIS_KEY = {
     // 登录token失效黑名单
     DMALL_JWT_BLACKLIST: "dmall_jwt_blacklist",
 }
+
+/**
+ * 服务端端口号
+ */
+exports.PORT = PORT;
+
+/**
+ * 客户端接口请求url - 前缀
+ */
+exports.REQUEST_URL = `http://127.0.0.1:${ PORT }/api`;

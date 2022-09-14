@@ -10,20 +10,6 @@ const { expressjwt } = require('express-jwt');
 const pool = require('./pool');
 const config = require('./config');
 const kit = require('./kit');
-// 引入路由模块
-const homeRouter = require('./routes/home.js');
-const goodsListRouter = require('./routes/goods-list.js');
-const goodsDetailRouter = require('./routes/goods-detail.js');
-const userRouter = require('./routes/user.js');
-const cartRouter = require('./routes/cart.js');
-const goodsEvaluateRouter = require('./routes/goods-evaluate.js');
-const brandRouter = require('./routes/brand.js');
-const dictionariesRouter = require('./routes/dictionaries.js');
-const orderRouter = require('./routes/order.js');
-const collectionRouter = require('./routes/collection.js');
-const addressRouter = require('./routes/address.js');
-const messageBoardRouter = require('./routes/message-board.js');
-const adminRouter = require('./routes/admin.js');
 const app = express();
 // 路由器标识
 const ROUTER_Flag = "APP";
@@ -81,19 +67,19 @@ app.use(async (req, res, next) => {
 });
 
 /** 接口路由 */
-app.use('/api/home', homeRouter);
-app.use('/api/goods-list', goodsListRouter);
-app.use('/api/goods-detail', goodsDetailRouter);
-app.use('/api/user', userRouter);
-app.use('/api/cart', cartRouter);
-app.use('/api/goods-evaluate', goodsEvaluateRouter);
-app.use('/api/brand', brandRouter);
-app.use('/api/dic', dictionariesRouter);
-app.use('/api/order', orderRouter);
-app.use('/api/collection', collectionRouter);
-app.use('/api/address', addressRouter);
-app.use('/api/message-board', messageBoardRouter);
-app.use('/api/admin', adminRouter);
+app.use('/api/home', require('./routes/home.js'));
+app.use('/api/goods-list', require('./routes/goods-list.js'));
+app.use('/api/goods-detail', require('./routes/goods-detail.js'));
+app.use('/api/message-board', require('./routes/message-board.js'));
+app.use('/api/user', require('./routes/user.js'));
+app.use('/api/cart', require('./routes/cart.js'));
+app.use('/api/goods-evaluate', require('./routes/goods-evaluate.js'));
+app.use('/api/brand', require('./routes/brand.js'));
+app.use('/api/dic', require('./routes/dictionaries.js'));
+app.use('/api/order', require('./routes/order.js'));
+app.use('/api/collection', require('./routes/collection.js'));
+app.use('/api/address', require('./routes/address.js'));
+app.use('/api/admin', require('./routes/admin.js'));
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
@@ -119,6 +105,6 @@ app.use(function(err, req, res, next) {
 });
 
 /** 自定义端口号 */
-process.env.PORT = '8000';
+process.env.PORT = config.PORT;
 
 module.exports = app;
