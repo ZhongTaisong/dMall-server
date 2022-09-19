@@ -80,7 +80,7 @@ router.post('/add', async (req, res) => {
         if(!uname){
             return res.status(400).send({
                 code: `DM-${ ROUTER_Flag }-000004`,
-                msg: 'uname不能为空!',
+                msg: '请求头uname不能为空!',
             });
         }
 

@@ -138,6 +138,13 @@ router.post('/public/validate', async (req, res) => {
             });
         }
 
+        if(!kit.validatePhone(phone)) {
+            return res.status(400).send({
+                code: `DM-${ ROUTER_Flag }-000032`,
+                msg: '请传入合法的phone!',
+            });
+        }
+
         const reuslt = await new Promise((resolve, reject) => {
             req?.pool?.query?.(
                 "SELECT email, phone, uname, upwd FROM dm_user WHERE uname=?", 
@@ -197,7 +204,7 @@ router.post('/public/validate', async (req, res) => {
 });
 
 /**
- * 更新登录密码
+ * 忘记密码 - 更新登录密码
  */
 router.patch('/public/update/password', async (req, res) => {
     try {
@@ -300,6 +307,13 @@ router.post('/public/register', async (req, res) => {
             });
         }
 
+        if(!kit.validatePhone(phone)) {
+            return res.status(400).send({
+                code: `DM-${ ROUTER_Flag }-000033`,
+                msg: '请传入合法的phone!',
+            });
+        }
+
         const isUname = await new Promise((resolve, reject) => {
             req?.pool?.query?.(
                 "SELECT uname FROM dm_user WHERE uname=?", 
@@ -337,5 +351,179 @@ router.post('/public/register', async (req, res) => {
         });
     }
 });
+
+/**
+ * 更新用户信息
+ */
+router.put('/update/user-information', async (req, res) => {
+    try {
+        const { id, nickName, phone, birthday, gender, } = req.body || {};
+        if(!id){
+            return res.status(400).send({
+                code: `DM-${ ROUTER_Flag }-000031`,
+                msg: 'id不能为空!',
+            });
+        }
+
+        if(!phone){
+            return res.status(400).send({
+                code: `DM-${ ROUTER_Flag }-000027`,
+                msg: 'phone不能为空!',
+            });
+        }
+
+        if(!kit.validatePhone(phone)) {
+            return res.status(400).send({
+                code: `DM-${ ROUTER_Flag }-000028`,
+                msg: '请传入合法的phone!',
+            });
+        }
+
+        if(!birthday){
+            return res.status(400).send({
+                code: `DM-${ ROUTER_Flag }-000029`,
+                msg: 'birthday不能为空!',
+            });
+        }
+
+        if(![0, 1, 2].includes(Number(gender))){
+            return res.status(400).send({
+                code: `DM-${ ROUTER_Flag }-000030`,
+                msg: '请传入合法的gender(0男, 1女, 2保密)!',
+            });
+        }
+
+        await new Promise((resolve, reject) => {
+            req?.pool?.query?.(
+                "UPDATE dm_user SET nickName=?, phone=?, birthday=?, gender=? WHERE id=?", 
+                [nickName, phone, birthday, gender, id],
+                (err, data) => !err ? resolve(data) : reject(err),
+            )
+        });
+        
+        res.status(200).send({
+            code: "DM-000000",
+            msg: "更新成功!",
+        });
+    } catch (error) {
+        res.status(500).send({
+            code: `DM-${ ROUTER_Flag }-000026`,
+            msg: '操作失败!',
+            error,
+        });
+    }
+});
+
+/**
+ * 查询用户信息
+ */
+router.get('/select/user-information', async (req, res) => {
+    try {
+        const { uname } = req.headers || {};
+        if(!uname){
+            return res.status(400).send({
+                code: `DM-${ ROUTER_Flag }-000035`,
+                msg: '请求头uname不能为空!',
+            });
+        }
+
+        const content = await new Promise((resolve, reject) => {
+            req?.pool?.query?.(
+                "SELECT id, uname, phone, gender, birthday, nickName FROM dm_user WHERE uname=?", 
+                [uname],
+                (err, data) => !err ? resolve(data?.[0] || {}) : reject(err),
+            )
+        });
+        
+        res.status(200).send({
+            code: "DM-000000",
+            content,
+        });
+    } catch (error) {
+        res.status(500).send({
+            code: `DM-${ ROUTER_Flag }-000034`,
+            msg: '操作失败!',
+            error,
+        });
+    }
+});
+
+/**
+ * 修改登录密码
+ */
+router.patch('/update/password', async (req, res) => {
+    try {
+        const { uname, } = req?.headers || {};
+        const { oldPwd, newPwd, } = req.body || {};
+        if(!uname){
+            return res.status(400).send({
+                code: `DM-${ ROUTER_Flag }-000037`,
+                msg: '请求头uname不能为空!',
+            });
+        }
+        if(!oldPwd){
+            return res.status(400).send({
+                code: `DM-${ ROUTER_Flag }-000038`,
+                msg: 'oldPwd不能为空!',
+            });
+        }
+
+        if(!newPwd){
+            return res.status(400).send({
+                code: `DM-${ ROUTER_Flag }-000039`,
+                msg: 'newPwd不能为空!',
+            });
+        }
+
+        const ukey = await new Promise((resolve, reject) => {
+            req?.pool?.query?.(
+                "SELECT ukey FROM dm_user WHERE uname=?", 
+                [uname],
+                (err, data) => !err ? resolve(data?.[0]?.ukey) : reject(err),
+            )
+        });
+
+        const reuslt = await new Promise((resolve, reject) => {
+            req?.pool?.query?.(
+                `SELECT * FROM dm_user WHERE uname=? AND upwd=?`, 
+                [ uname, kit.md5(`${ oldPwd }${ ukey }`) ],
+                (err, reuslt) => !err ? resolve(reuslt) : reject(err),
+            )
+        });
+
+        if(!Array.isArray(reuslt) || !reuslt.length) {
+            return res.status(404).send({
+                code: `DM-${ ROUTER_Flag }-000040`,
+                msg: '旧密码错误!',
+            });
+        }
+
+        const result = await new Promise((resolve, reject) => {
+            req?.pool?.query?.(
+                "UPDATE dm_user SET upwd=? WHERE uname=?", 
+                [kit.md5(`${ newPwd }${ ukey }`), uname],
+                (err, data) => !err ? resolve(data) : reject(err),
+            )
+        });
+
+        if(!result?.affectedRows) {
+            return res.status(404).send({
+                code: `DM-${ ROUTER_Flag }-000041`,
+                msg: "登录密码更新失败!",
+            });
+        }
+
+        res.status(200).send({
+            code: "DM-000000",
+            msg: "登录密码更新成功!",
+        });
+    } catch (error) {
+        res.status(500).send({
+            code: `DM-${ ROUTER_Flag }-000036`,
+            msg: '操作失败!',
+            error,
+        });
+    }
+})
 
 module.exports = router;
