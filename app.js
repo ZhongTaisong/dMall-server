@@ -77,7 +77,7 @@ app.use('/api/goods-evaluate', require('./routes/goods-evaluate.js'));
 app.use('/api/brand', require('./routes/brand.js'));
 app.use('/api/dic', require('./routes/dictionaries.js'));
 app.use('/api/order', require('./routes/order.js'));
-app.use('/api/collection', require('./routes/collection.js'));
+app.use('/api/goods-collection', require('./routes/goods-collection.js'));
 app.use('/api/address', require('./routes/address.js'));
 app.use('/api/admin', require('./routes/admin.js'));
 
