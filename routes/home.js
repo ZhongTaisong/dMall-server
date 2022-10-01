@@ -25,6 +25,7 @@ router.get('/public/hot-recommendations', async (req, res) => {
             code: `DM-${ ROUTER_Flag }-000001`,
             msg: '操作失败!',
             error,
+            errorMsg: error?.message,
         });
     }
 });
@@ -51,6 +52,7 @@ router.get('/public/single-product-promotion', async (req, res) => {
             code: `DM-${ ROUTER_Flag }-000002`,
             msg: '操作失败!',
             error,
+            errorMsg: error?.message,
         });
     }
 });
@@ -77,6 +79,7 @@ router.get('/public/large-scale-promotion', async (req, res) => {
             code: `DM-${ ROUTER_Flag }-000003`,
             msg: '操作失败!',
             error,
+            errorMsg: error?.message,
         });
     }
 });

@@ -40,6 +40,7 @@ router.get('/select', async (req, res) => {
             code: `DM-${ ROUTER_Flag }-000001`,
             msg: '操作失败!',
             error,
+            errorMsg: error?.message,
         });
     }
 });
@@ -127,6 +128,7 @@ router.post('/add', async (req, res) => {
             code: `DM-${ ROUTER_Flag }-000003`,
             msg: '操作失败!',
             error,
+            errorMsg: error?.message,
         });
     }
 });
@@ -220,6 +222,7 @@ router.put('/update', async (req, res) => {
             code: `DM-${ ROUTER_Flag }-000011`,
             msg: '操作失败!',
             error,
+            errorMsg: error?.message,
         });
     }
 });
@@ -269,6 +272,7 @@ router.delete('/delete/:id', async (req, res) => {
             code: `DM-${ ROUTER_Flag }-000020`,
             msg: '操作失败!',
             error,
+            errorMsg: error?.message,
         });
     }
 })

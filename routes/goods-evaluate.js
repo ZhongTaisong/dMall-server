@@ -3,8 +3,7 @@ const router = express.Router();
 const moment = require('moment');
 const lodash  = require('lodash');
 const kit = require('./../kit');
-const config = require('./../config');
-const { default: axios } = require('axios');
+const axios = require('./../axios');
 // 路由器标识
 const ROUTER_Flag = "GOODS_EVALUATE";
 
@@ -64,6 +63,7 @@ router.get('/public/select/:pid', async (req, res) => {
             code: `DM-${ ROUTER_Flag }-000002`,
             msg: '操作失败!',
             error,
+            errorMsg: error?.message,
         });
     }
 });
@@ -131,6 +131,7 @@ router.post('/add', async (req, res) => {
             code: `DM-${ ROUTER_Flag }-000003`,
             msg: '操作失败!',
             error,
+            errorMsg: error?.message,
         });
     }
 });
@@ -182,6 +183,7 @@ router.put('/update', async (req, res) => {
             code: `DM-${ ROUTER_Flag }-000008`,
             msg: '操作失败!',
             error,
+            errorMsg: error?.message,
         });
     }
 });
@@ -198,14 +200,7 @@ router.get('/select/:ordernum', async (req, res) => {
                 msg: 'ordernum不能为空!',
             });
         }
-
-        const result = await axios({
-            method: 'get',
-            url: `${config.REQUEST_URL}/order/select/${ordernum}`,
-            headers: {
-                ...req.headers,
-            },
-        });
+        const result = await axios.use.get(`/order/select/${ordernum}`);
 
         let { goodsInfos, } = result?.data?.content || {};
         const promise_list = [];
@@ -240,6 +235,7 @@ router.get('/select/:ordernum', async (req, res) => {
             code: `DM-${ ROUTER_Flag }-000013`,
             msg: '操作失败!',
             error,
+            errorMsg: error?.message,
         });
     }
 });

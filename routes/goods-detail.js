@@ -62,6 +62,7 @@ router.get("/public/select/:id", async (req, res) => {
             code: `DM-${ ROUTER_Flag }-000002`,
             msg: '操作失败!',
             error,
+            errorMsg: error?.message,
         });
     }
 });

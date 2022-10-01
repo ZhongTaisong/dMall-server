@@ -83,6 +83,7 @@ router.post('/public/login', async (req, res) => {
             code: `DM-${ ROUTER_Flag }-000005`,
             msg: '操作失败!',
             error,
+            errorMsg: error?.message,
         });
     }
 });
@@ -107,6 +108,7 @@ router.get('/public/logout', (req, res) => {
             code: `DM-${ ROUTER_Flag }-000006`,
             msg: '操作失败!',
             error,
+            errorMsg: error?.message,
         });
     }
 });
@@ -199,6 +201,7 @@ router.post('/public/validate', async (req, res) => {
             code: `DM-${ ROUTER_Flag }-000013`,
             msg: '操作失败!',
             error,
+            errorMsg: error?.message,
         });
     }
 });
@@ -257,6 +260,7 @@ router.patch('/public/update/password', async (req, res) => {
             code: `DM-${ ROUTER_Flag }-000014`,
             msg: '操作失败!',
             error,
+            errorMsg: error?.message,
         });
     }
 })
@@ -348,6 +352,7 @@ router.post('/public/register', async (req, res) => {
             code: `DM-${ ROUTER_Flag }-000018`,
             msg: '操作失败!',
             error,
+            errorMsg: error?.message,
         });
     }
 });
@@ -410,6 +415,7 @@ router.put('/update/user-information', async (req, res) => {
             code: `DM-${ ROUTER_Flag }-000026`,
             msg: '操作失败!',
             error,
+            errorMsg: error?.message,
         });
     }
 });
@@ -444,6 +450,7 @@ router.get('/select/user-information', async (req, res) => {
             code: `DM-${ ROUTER_Flag }-000034`,
             msg: '操作失败!',
             error,
+            errorMsg: error?.message,
         });
     }
 });
@@ -522,6 +529,7 @@ router.patch('/update/password', async (req, res) => {
             code: `DM-${ ROUTER_Flag }-000036`,
             msg: '操作失败!',
             error,
+            errorMsg: error?.message,
         });
     }
 })

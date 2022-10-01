@@ -92,6 +92,7 @@ router.post('/public/select', async (req, res) => {
             code: `DM-${ ROUTER_Flag }-000005`,
             msg: '操作失败!',
             error,
+            errorMsg: error?.message,
         });
     }
 });
@@ -153,6 +154,7 @@ router.get('/public/select/filter', async (req, res) => {
             code: `DM-${ ROUTER_Flag }-000007`,
             msg: '操作失败!',
             error,
+            errorMsg: error?.message,
         });
     }
 });
