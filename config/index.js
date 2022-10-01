@@ -34,3 +34,8 @@ exports.PORT = PORT;
  * 客户端接口请求url - 前缀
  */
 exports.REQUEST_URL = `http://127.0.0.1:${ PORT }/api`;
+
+/**
+ * 接口请求成功code
+ */
+exports.SUCCESS_CODE = "DM-000000";

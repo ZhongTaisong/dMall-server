@@ -11,6 +11,7 @@ const pool = require('./pool');
 const config = require('./config');
 const kit = require('./kit');
 const app = express();
+const axios = require('./axios');
 // 路由器标识
 const ROUTER_Flag = "APP";
 
@@ -63,6 +64,9 @@ app.use(async (req, res, next) => {
     }
   }
 
+  /** 插入axios请求头 */
+  axios.insertAxiosHeaders(req);
+
   next();
 });
 
@@ -72,7 +76,7 @@ app.use('/api/goods-list', require('./routes/goods-list.js'));
 app.use('/api/goods-detail', require('./routes/goods-detail.js'));
 app.use('/api/message-board', require('./routes/message-board.js'));
 app.use('/api/user', require('./routes/user.js'));
-app.use('/api/cart', require('./routes/cart.js'));
+app.use('/api/shopping-cart', require('./routes/shopping-cart.js'));
 app.use('/api/goods-evaluate', require('./routes/goods-evaluate.js'));
 app.use('/api/brand', require('./routes/brand.js'));
 app.use('/api/dic', require('./routes/dictionaries.js'));
