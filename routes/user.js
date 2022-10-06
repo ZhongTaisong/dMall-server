@@ -408,6 +408,7 @@ router.put('/update/user-information', async (req, res) => {
         
         res.status(200).send({
             code: "DM-000000",
+            content: req?.body || {},
             msg: "更新成功!",
         });
     } catch (error) {
