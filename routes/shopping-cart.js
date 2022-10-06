@@ -186,7 +186,7 @@ router.post('/add/:action?', async (req, res) => {
 
         res.status(200).send({
             code: "DM-000000",
-            msg: "加入购物车成功!",
+            msg: !['goods-detail'].includes(action) ? "加入购物车成功!" : null,
         });
     } catch (error) {
         res.status(500).send({
@@ -374,7 +374,7 @@ router.patch('/update/num', async (req,res) => {
 router.post('/select/pids', async (req, res) => {
     try {
         const { uname } = req.headers || {};
-        const { pids } = req.body || {};
+        const { goodsInfo } = req.body || {};
         if(!uname){
             return res.status(400).send({
                 code: `DM-${ ROUTER_Flag }-000024`,
@@ -382,27 +382,28 @@ router.post('/select/pids', async (req, res) => {
             });
         }
 
-        if(!pids) {
+        if(!goodsInfo) {
             return res.status(400).send({
                 code: `DM-${ ROUTER_Flag }-000025`,
                 msg: 'pids不能为空!',
             });
         }
 
-        if(!Array.isArray(pids)) {
+        if(!Array.isArray(goodsInfo)) {
             return res.status(400).send({
                 code: `DM-${ ROUTER_Flag }-000026`,
-                msg: 'pids值类型不对, 应为数组!',
+                msg: 'goodsInfo值类型不对, 应为数组!',
             });
         }
 
-        if(!pids.length) {
+        if(!goodsInfo.length) {
             return res.status(400).send({
                 code: `DM-${ ROUTER_Flag }-000027`,
-                msg: 'pids不能为空!',
+                msg: 'goodsInfo不能为空!',
             });
         }
 
+        const pids = goodsInfo.map(item => item?.pid) || [];
         const result = await new Promise((resolve, reject) => {
             req?.pool?.query?.(
                 "SELECT * FROM dm_shopping_cart WHERE uname=? AND pid IN (?) ORDER BY update_time DESC", 
@@ -429,7 +430,13 @@ router.post('/select/pids', async (req, res) => {
 
         if(Array.isArray(result) && Array.isArray(goods_list)) {
             result.forEach(item => {
-                item['goodsInfo'] = goods_list.find(item02 => item?.pid === item02?.id) || {};
+                const goodsListItem = goods_list.find(item02 => item?.pid === item02?.id);
+                const data = goodsInfo.find(item02 => item02?.pid === item?.pid);
+                if(data && goodsListItem) {
+                    item['num'] = data['num'] || 1;
+                    item['totalprice'] = item['num'] * goodsListItem['price'];
+                }
+                item['goodsInfo'] = goodsListItem || {};
             });
         }
         

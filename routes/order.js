@@ -5,7 +5,7 @@ const kit = require('./../kit');
 const config = require('./../config');
 const lodash = require('lodash');
 // 路由器标识
-const ROUTER_Flag = "HOME";
+const ROUTER_Flag = "ORDER";
 
 /**
  * 分页查询 - 当前用户订单
@@ -309,14 +309,51 @@ router.post('/add', async (req, res) => {
             });
         }
 
-        const pids = orderInfos.map(item => item?.pid) || [];
-        await new Promise((resolve, reject) => {
+        const shoppingCartList = await new Promise((resolve, reject) => {
             req?.pool?.query?.(
-                "DELETE FROM dm_shopping_cart WHERE pid IN (?)", 
-                [pids],
-                (err, data) => !err ? resolve(Boolean(data?.affectedRows)) : reject(err),
+                "SELECT * FROM dm_shopping_cart WHERE uname=?", 
+                [uname],
+                (err, data) => !err ? resolve(data) : reject(err),
             )
         });
+
+        if(Array.isArray(shoppingCartList)) {
+            const promise_list = [];
+            shoppingCartList.forEach((item, index) => {
+                const data = orderInfos.find(item02 => item02?.pid === item?.pid);
+                if(data) {
+                    const num = item['num'] - data['num'];
+                    item['num'] = num > 0 ? num : 0;
+                    item['totalprice'] = data['price'] * item['num'];
+                    // 操作时间
+                    const time = moment(Date.now() + index).format('YYYY-MM-DD HH:mm:ss');
+
+                    if(num > 0) {
+                        promise_list.push(
+                            new Promise((resolve, reject) => {
+                                req?.pool?.query?.(
+                                    "UPDATE dm_shopping_cart SET num=?, totalprice=?, update_time=? WHERE pid=? AND uname=?",
+                                    [item['num'], item['totalprice'], time, item?.pid, uname], 
+                                    (err, data) => !err ? resolve(data) : reject(err),
+                                )
+                            })
+                        );
+                    }else {
+                        promise_list.push(
+                            new Promise((resolve, reject) => {
+                                req?.pool?.query?.(
+                                    "DELETE FROM dm_shopping_cart WHERE pid=? AND uname=?", 
+                                    [item?.pid, uname], 
+                                    (err, data) => !err ? resolve(data) : reject(err),
+                                )
+                            })
+                        );
+                    }
+                }
+            });
+
+            await kit.promiseAllSettled(promise_list);
+        }
         
         res.status(200).send({
             code: "DM-000000",

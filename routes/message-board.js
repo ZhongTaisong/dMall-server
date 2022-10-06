@@ -13,7 +13,7 @@ router.get('/public/select', async (req, res) => {
     try {
         const content = await new Promise((resolve, reject) => {
             req?.pool?.query?.(
-                "SELECT * FROM dm_message ORDER BY submitTime DESC",
+                "SELECT * FROM dm_message ORDER BY create_time DESC",
                 null, 
                 (err, reuslt) => !err ? resolve(reuslt) : reject(err),
             );
