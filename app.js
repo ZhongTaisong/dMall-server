@@ -43,6 +43,10 @@ app.use('/api', express.static(path.join(__dirname, 'public')));
 /** 将pool挂在到req上 */
 app.use((req, res, next) => {
   req.pool = pool;
+
+  /** 插入axios请求头 */
+  axios.insertAxiosHeaders(req);
+  
   next();
 });
 
@@ -63,9 +67,6 @@ app.use(async (req, res, next) => {
       return next(createError(401));
     }
   }
-
-  /** 插入axios请求头 */
-  axios.insertAxiosHeaders(req);
 
   next();
 });

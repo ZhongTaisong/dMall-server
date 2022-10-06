@@ -74,7 +74,7 @@ router.get('/public/select/:pid', async (req, res) => {
 router.post('/add', async (req, res) => {
     try {
         const { uname } = req.headers || {};
-        let { pid, ordernum, content, } = req.body || {};
+        let { pid, order_no, content, } = req.body || {};
         const maxLength = 300;
         content = content?.trim?.();
         if(!uname){
@@ -91,10 +91,10 @@ router.post('/add', async (req, res) => {
             });
         }
 
-        if(!ordernum){
+        if(!order_no){
             return res.status(400).send({
                 code: `DM-${ ROUTER_Flag }-000012`,
-                msg: 'ordernum不能为空!',
+                msg: 'order_no不能为空!',
             });
         }
 
@@ -116,7 +116,7 @@ router.post('/add', async (req, res) => {
         await new Promise((resolve, reject) => {
             req?.pool?.query?.(
                 "INSERT INTO dm_comment VALUES (NULL, ?, ?, ?, ?, ?, ?, ?)", 
-                [uname, pid, content, date, 0, 0, ordernum],
+                [uname, pid, content, date, 0, 0, order_no],
                 (err, data) => !err ? resolve(data) : reject(err),
             )
         });
@@ -191,16 +191,16 @@ router.put('/update', async (req, res) => {
 /**
  * 根据订单编号 - 查询商品详情、商品评价
  */
-router.get('/select/:ordernum', async (req, res) => {
+router.get('/select/:order_no', async (req, res) => {
     try {
-        const { ordernum } = req.params || {};
-        if(!ordernum){
+        const { order_no } = req.params || {};
+        if(!order_no){
             return res.status(400).send({
                 code: `DM-${ ROUTER_Flag }-0000014`,
-                msg: 'ordernum不能为空!',
+                msg: 'order_no不能为空!',
             });
         }
-        const result = await axios.use.get(`/order/select/${ordernum}`);
+        const result = await axios.use.get(`/order/select/${order_no}`);
 
         let { goodsInfos, } = result?.data?.content || {};
         const promise_list = [];
@@ -220,10 +220,12 @@ router.get('/select/:ordernum', async (req, res) => {
             const result02 = await kit.promiseAllSettled(promise_list);
             goodsInfos.forEach(item => {
                 const data = result02?.find?.(item02 => item.id === item02.pid);
-                item['content'] = data?.content || null;
-                item['ordernum'] = ordernum;
+                item['order_no'] = order_no;
                 item['pid'] = item?.id;
-                item['id'] = data?.id || null;
+                if(data) {
+                    item['content'] = data?.content || null;
+                    item['id'] = data?.id || null;
+                }
             })
         }
         res.status(200).send({
