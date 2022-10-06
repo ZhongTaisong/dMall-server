@@ -11,7 +11,6 @@ const pool = require('./pool');
 const config = require('./config');
 const kit = require('./kit');
 const app = express();
-const axios = require('./axios');
 // 路由器标识
 const ROUTER_Flag = "APP";
 
@@ -43,10 +42,6 @@ app.use('/api', express.static(path.join(__dirname, 'public')));
 /** 将pool挂在到req上 */
 app.use((req, res, next) => {
   req.pool = pool;
-
-  /** 插入axios请求头 */
-  axios.insertAxiosHeaders(req);
-  
   next();
 });
 

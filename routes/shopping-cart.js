@@ -1,8 +1,8 @@
 const express=require("express");
 const moment = require('moment');
-const axios = require('./../axios');
 const kit = require('./../kit');
 const config = require('./../config');
+const commonFn = require('./common-fn');
 const router = express.Router();
 /**
  * 购物车
@@ -175,10 +175,10 @@ router.post('/add/:action?', async (req, res) => {
 
         if(['goods-collection'].includes(action)) {
             const pids = goodsInfo.map(item => item?.pid) || [];
-            const result03 = await axios.use.put("/goods-collection/delete", { pids, });
-            if(result03?.data?.code !== config?.SUCCESS_CODE) {
-                return res.status(404).send({
-                    code: `DM-${ ROUTER_Flag }-000022`,
+            const result03 = await commonFn.deletGoodsCollectionFn(req, pids);
+            if(result03?.sendContent?.code !== config?.SUCCESS_CODE) {
+                return res.status(result03?.status).send({
+                    code: result03?.sendContent?.code,
                     msg: "加入购物车失败!",
                 });
             }
@@ -203,55 +203,8 @@ router.post('/add/:action?', async (req, res) => {
  */
 router.put('/delete', async (req, res) => {
     try {
-        const { uname } = req.headers || {};
-        const { pids } = req.body || {};
-        if(!uname){
-            return res.status(400).send({
-                code: `DM-${ ROUTER_Flag }-000010`,
-                msg: '请求头uname不能为空!',
-            });
-        }
-
-        if(!pids) {
-            return res.status(400).send({
-                code: `DM-${ ROUTER_Flag }-000011`,
-                msg: 'pids不能为空!',
-            });
-        }
-
-        if(!Array.isArray(pids)) {
-            return res.status(400).send({
-                code: `DM-${ ROUTER_Flag }-000012`,
-                msg: 'pids值类型不对, 应为数组!',
-            });
-        }
-
-        if(!pids.length) {
-            return res.status(400).send({
-                code: `DM-${ ROUTER_Flag }-000013`,
-                msg: 'pids不能为空!',
-            });
-        }
-
-        const result = await new Promise((resolve, reject) => {
-            req?.pool?.query?.(
-                "DELETE FROM dm_shopping_cart WHERE pid IN(?) AND uname=?", 
-                [pids, uname],
-                (err, data) => !err ? resolve(data) : reject(err),
-            )
-        });
-
-        if(!result?.affectedRows) {
-            return res.status(404).send({
-                code: `DM-${ ROUTER_Flag }-000014`,
-                msg: "删除购物车失败!",
-            });
-        }
-        
-        res.status(200).send({
-            code: "DM-000000",
-            msg: "删除购物车成功!",
-        });
+        const result = await commonFn.deletShoppingCartFn(req);
+        return res.status(result?.status).send(result?.sendContent);
     } catch (error) {
         res.status(500).send({
             code: `DM-${ ROUTER_Flag }-000009`,

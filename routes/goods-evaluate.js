@@ -3,7 +3,7 @@ const router = express.Router();
 const moment = require('moment');
 const lodash  = require('lodash');
 const kit = require('./../kit');
-const axios = require('./../axios');
+const commonFn = require('./common-fn');
 // 路由器标识
 const ROUTER_Flag = "GOODS_EVALUATE";
 
@@ -200,9 +200,9 @@ router.get('/select/:order_no', async (req, res) => {
                 msg: 'order_no不能为空!',
             });
         }
-        const result = await axios.use.get(`/order/select/${order_no}`);
+        const result = await commonFn.selectOrderDetailsFn(req);
 
-        let { goodsInfos, } = result?.data?.content || {};
+        let { goodsInfos, } = result?.sendContent?.content || {};
         const promise_list = [];
         if(Array.isArray(goodsInfos)) {
             goodsInfos.forEach(item => {

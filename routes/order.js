@@ -3,6 +3,7 @@ const moment = require('moment');
 const router = express.Router();
 const kit = require('./../kit');
 const config = require('./../config');
+const commonFn = require('./common-fn');
 const lodash = require('lodash');
 // 路由器标识
 const ROUTER_Flag = "ORDER";
@@ -136,7 +137,7 @@ router.delete('/delete/:id', async (req, res) => {
 
         const data = await new Promise((resolve, reject) => {
             req?.pool?.query?.(
-                `DELETE FROM dm_order WHERE id=? `, 
+                `DELETE FROM dm_order WHERE order_id=? `, 
                 [id], 
                 (err, reuslt) => !err ? resolve(Boolean(reuslt?.affectedRows)) : reject(err),
             )
@@ -169,74 +170,8 @@ router.delete('/delete/:id', async (req, res) => {
  */
 router.get('/select/:order_no', async (req, res) => {
     try {
-        const { order_no } = req.params || {};
-        if(!order_no){
-            return res.status(400).send({
-                code: `DM-${ ROUTER_Flag }-0000010`,
-                msg: 'order_no不能为空!',
-            });
-        }
-
-        const result01 = await new Promise((resolve, reject) => {
-            req?.pool?.query?.(
-                "SELECT * FROM dm_order WHERE order_no=?", 
-                [order_no], 
-                (err, reuslt) => !err ? resolve(reuslt?.[0] || {}) : reject(err),
-            )
-        });
-        if(!result01 || !Object.keys(result01).length) {
-            return res.status(404).send({
-                code: `DM-${ ROUTER_Flag }-000011`,
-                msg: '当前订单不存在!',
-            });
-        };
-
-        const order_infos = JSON.parse(result01?.order_infos || '[]');
-        const pids = order_infos?.map?.(item => item?.pid) || [];
-        const [result02, result03] = await kit.promiseAllSettled([
-            new Promise((resolve, reject) => {
-                req?.pool?.query?.(
-                    "SELECT * FROM dm_address WHERE id=?", 
-                    [result01?.address_id], 
-                    (err, reuslt) => !err ? resolve(reuslt?.[0] || {}) : reject(err),
-                )
-            }),
-            new Promise((resolve, reject) => {
-                req?.pool?.query?.(
-                    "SELECT mainPicture, description, spec, id FROM dm_products WHERE id IN (?)", 
-                    [pids], 
-                    (err, reuslt) => !err ? resolve(reuslt) : reject(err),
-                )
-            }),
-        ]);
-
-        if(Array.isArray(result03)) {
-            result03.forEach(item => {
-                const data = order_infos?.find?.(item02 => item02?.pid === item?.id);
-                if(data) {
-                    item['price'] = data?.price ?? 0;
-                    item['num'] = data?.num ?? 1;
-                }
-            })
-        }
-
-        let total_num = 0;
-        if(Array.isArray(order_infos)) {
-            total_num = order_infos.reduce((total, item) => {
-                return total += item?.num;
-            }, 0);
-        }
-
-        result01['total_num'] = total_num;
-        delete result01['order_infos'];
-        res.status(200).send({
-            code: "DM-000000",
-            content: {
-                orderInfos: result01,
-                addressInfos: result02,
-                goodsInfos: result03,
-            },
-        });
+        const result = await commonFn.selectOrderDetailsFn(req);
+        return res.status(result?.status).send(result?.sendContent);
     } catch (error) {
         res.status(500).send({
             code: `DM-${ ROUTER_Flag }-000012`,

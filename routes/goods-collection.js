@@ -1,8 +1,8 @@
 const express=require("express");
 const moment = require('moment');
-const axios = require('./../axios');
 const kit = require('./../kit');
 const config = require('./../config');
+const commonFn = require('./common-fn');
 const router = express.Router();
 /**
  * 商品收藏
@@ -147,10 +147,10 @@ router.post('/add/:action?', async (req, res) => {
         );
         
         if(['shopping-cart'].includes(action)) {
-            const result02 = await axios.use.put("/shopping-cart/delete", { pids, });
-            if(result02?.data?.code !== config?.SUCCESS_CODE) {
-                return res.status(404).send({
-                    code: `DM-${ ROUTER_Flag }-000020`,
+            const result02 = await commonFn.deletShoppingCartFn(req);
+            if(result02?.sendContent?.code !== config?.SUCCESS_CODE) {
+                return res.status(result02?.status).send({
+                    code: result02?.sendContent?.code,
                     msg: "加入收藏失败!",
                 });
             }
@@ -232,55 +232,8 @@ router.post('/select/pids', async (req, res) => {
  */
 router.put('/delete', async (req, res) => {
     try {
-        const { uname } = req.headers || {};
-        const { pids } = req.body || {};
-        if(!uname){
-            return res.status(400).send({
-                code: `DM-${ ROUTER_Flag }-000015`,
-                msg: '请求头uname不能为空!',
-            });
-        }
-
-        if(!pids) {
-            return res.status(400).send({
-                code: `DM-${ ROUTER_Flag }-000016`,
-                msg: 'pids不能为空!',
-            });
-        }
-
-        if(!Array.isArray(pids)) {
-            return res.status(400).send({
-                code: `DM-${ ROUTER_Flag }-000017`,
-                msg: 'pids值类型不对, 应为数组!',
-            });
-        }
-
-        if(!pids.length) {
-            return res.status(400).send({
-                code: `DM-${ ROUTER_Flag }-000018`,
-                msg: 'pids不能为空!',
-            });
-        }
-
-        const result = await new Promise((resolve, reject) => {
-            req?.pool?.query?.(
-                "DELETE FROM dm_goods_collection WHERE pid IN(?) AND uname=?", 
-                [pids, uname],
-                (err, data) => !err ? resolve(data) : reject(err),
-            )
-        });
-
-        if(!result?.affectedRows) {
-            return res.status(404).send({
-                code: `DM-${ ROUTER_Flag }-000019`,
-                msg: "取消加入收藏失败!",
-            });
-        }
-        
-        res.status(200).send({
-            code: "DM-000000",
-            msg: "取消加入收藏成功!",
-        });
+        const result = await commonFn.deletGoodsCollectionFn(req);
+        return res.status(result?.status).send(result?.sendContent);
     } catch (error) {
         res.status(500).send({
             code: `DM-${ ROUTER_Flag }-000014`,
