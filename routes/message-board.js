@@ -2,7 +2,9 @@ const express = require('express');
 const router = express.Router();
 const moment = require('moment');
 const kit = require('./../kit');
-
+/**
+ * 留言
+ */
 // 路由器标识
 const ROUTER_Flag = "MESSAGE_BOARD";
 

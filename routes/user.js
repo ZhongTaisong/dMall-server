@@ -5,6 +5,9 @@ const moment = require('moment');
 const jwt = require('jsonwebtoken');
 const config = require('./../config');
 const kit = require('./../kit');
+/**
+ * 用户
+ */
 // 路由器标识
 const ROUTER_Flag = "USER";
 

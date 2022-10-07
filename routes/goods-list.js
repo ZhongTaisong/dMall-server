@@ -3,7 +3,9 @@ const router = express.Router();
 const kit = require('./../kit');    
 const config = require('./../config');
 const lodash = require('lodash');
-
+/**
+ * 商品列表
+ */
 // 路由器标识
 const ROUTER_Flag = "GOODS_LIST";
 
@@ -70,7 +72,7 @@ router.post('/public/select', async (req, res) => {
                 `
                 SELECT SQL_CALC_FOUND_ROWS * FROM dm_products WHERE 
                 ${ keyword ? `description LIKE "%${ keyword }%" AND` : '' } 
-                onLine=100 ${ sql } LIMIT ${ current }, ${ pageSize };
+                onLine=100 ${ sql } LIMIT ${ current * pageSize }, ${ pageSize };
                 SELECT FOUND_ROWS() as total;
                 `,
                 null, 

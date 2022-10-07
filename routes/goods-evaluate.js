@@ -4,6 +4,9 @@ const moment = require('moment');
 const lodash  = require('lodash');
 const kit = require('./../kit');
 const commonFn = require('./common-fn');
+/**
+ * 商品评价
+ */
 // 路由器标识
 const ROUTER_Flag = "GOODS_EVALUATE";
 

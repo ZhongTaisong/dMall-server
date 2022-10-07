@@ -1,5 +1,8 @@
 const express = require('express');
 const router = express.Router();
+/**
+ * 首页
+ */
 // 路由器标识
 const ROUTER_Flag = "HOME";
 

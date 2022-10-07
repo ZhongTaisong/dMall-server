@@ -1,6 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const kit = require('./../kit');
+/**
+ * 收货地址
+ */
 // 路由器标识
 const ROUTER_Flag = "ADDRESS";
 

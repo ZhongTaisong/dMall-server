@@ -1,5 +1,8 @@
 const express = require('express');
 const router = express.Router();
+/**
+ * 商品详情
+ */
 // 路由器标识
 const ROUTER_Flag = "GOODS_DETAIL";
 

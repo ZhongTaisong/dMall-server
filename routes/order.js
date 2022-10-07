@@ -5,6 +5,9 @@ const kit = require('./../kit');
 const config = require('./../config');
 const commonFn = require('./common-fn');
 const lodash = require('lodash');
+/**
+ * 订单
+ */
 // 路由器标识
 const ROUTER_Flag = "ORDER";
 
@@ -64,7 +67,7 @@ router.post('/select', async (req, res) => {
             }),
             new Promise((resolve, reject) => {
                 req?.pool?.query?.(
-                    `SELECT * FROM dm_order WHERE uname=? ORDER BY create_time DESC LIMIT ${ current }, ${ pageSize }`,
+                    `SELECT * FROM dm_order WHERE uname=? ORDER BY create_time DESC LIMIT ${ current * pageSize }, ${ pageSize }`,
                     [ uname ], 
                     (err, reuslt) => !err ? resolve(reuslt) : reject(err),
                 );
