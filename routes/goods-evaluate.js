@@ -94,13 +94,6 @@ router.post('/add', async (req, res) => {
             });
         }
 
-        if(!order_no){
-            return res.status(400).send({
-                code: `DM-${ ROUTER_Flag }-000012`,
-                msg: 'order_no不能为空!',
-            });
-        }
-
         if(!content){
             return res.status(400).send({
                 code: `DM-${ ROUTER_Flag }-000006`,
@@ -115,14 +108,21 @@ router.post('/add', async (req, res) => {
             });
         }
     
-        const date = moment(Date.now()).format('YYYY-MM-DD HH:mm:ss');
-        await new Promise((resolve, reject) => {
+        const time = moment(Date.now()).format('YYYY-MM-DD HH:mm:ss');
+        const result = await new Promise((resolve, reject) => {
             req?.pool?.query?.(
-                "INSERT INTO dm_comment VALUES (NULL, ?, ?, ?, ?, ?, ?, ?)", 
-                [uname, pid, content, date, 0, 0, order_no],
+                "INSERT INTO dm_comment (uname, pid, content, ordernum, create_time, update_time) VALUES (?, ?, ?, ?, ?, ?)", 
+                [uname, pid, content, order_no || null, time, time],
                 (err, data) => !err ? resolve(data) : reject(err),
             )
         });
+
+        if(!result?.affectedRows) {
+            return res.status(404).send({
+                code: `DM-${ ROUTER_Flag }-000012`,
+                msg: "评价失败!",
+            });
+        }
 
         res.status(200).send({
             code: "DM-000000",
@@ -166,20 +166,27 @@ router.put('/update', async (req, res) => {
                 msg: `评价内容不能超过${ maxLength }个字!`,
             });
         }
-    
-        const date = moment(Date.now()).format('YYYY-MM-DD HH:mm:ss');
-        await new Promise((resolve, reject) => {
+
+        const time = moment(Date.now()).format('YYYY-MM-DD HH:mm:ss');
+        const result = await new Promise((resolve, reject) => {
             req?.pool?.query?.(
-                "UPDATE dm_comment SET content=?, commentTime=? WHERE id=?", 
-                [content, date, id],
+                "UPDATE dm_comment SET content=?, update_time=? WHERE id=?",
+                [content, time, id],
                 (err, data) => !err ? resolve(data) : reject(err),
             )
         });
+
+        if(!result?.affectedRows) {
+            return res.status(404).send({
+                code: `DM-${ ROUTER_Flag }-000014`,
+                msg: "更新失败!",
+            });
+        }
     
         res.status(200).send({
             code: "DM-000000",
             content: null,
-            msg: '评价成功!'
+            msg: '更新成功!'
         }); 
     } catch (error) {
         res.status(500).send({

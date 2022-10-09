@@ -79,6 +79,8 @@ app.use('/api/goods-collection', require('./routes/goods-collection.js'));
 app.use('/api/address', require('./routes/address.js'));
 app.use('/api/admin/brands', require('./routes/admin/brands.js'));
 app.use('/api/admin/order', require('./routes/admin/order.js'));
+app.use('/api/admin/goods-evaluate', require('./routes/admin/goods-evaluate.js'));
+app.use('/api/admin/goods', require('./routes/admin/goods.js'));
 app.use('/api/admin', require('./routes/admin.js'));
 
 // catch 404 and forward to error handler
