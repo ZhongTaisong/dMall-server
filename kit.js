@@ -166,3 +166,8 @@ exports.validatePhone = (value) => {
     const reg = /^((1[3,5,8][0-9])|(14[5,7])|(17[0,6,7,8])|(19[7]))\d{8}$/;
     return reg.test(value);
 };
+
+/**
+ * 生成 - 初始密码
+ */
+ exports.getInitPassword = () => Math.random().toString().slice(2, 8);
