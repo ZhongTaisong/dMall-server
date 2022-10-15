@@ -4,6 +4,7 @@ const moment = require('moment');
 const lodash  = require('lodash');
 const kit = require('./../kit');
 const commonFn = require('./common-fn');
+const config = require('./../config');
 /**
  * 商品评价
  */
@@ -52,7 +53,7 @@ router.get('/public/select/:pid', async (req, res) => {
             result01.forEach(item => {
                 const obj = result02.find(item02 => item02.uname === item.uname) || {};
                 if(obj && Object.keys(obj).length) {
-                    item['avatar'] = obj.avatar || null;
+                    item['avatar'] = obj.avatar ? `${ config.REQUEST_URL }${ config.AVATAR_PATH }/${ obj.avatar }` : null;
                 }
             })
         };

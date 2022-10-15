@@ -70,15 +70,24 @@ router.post('/public/select', async (req, res) => {
         const [dataSource, total] = await new Promise((resolve, reject) => {
             req?.pool?.query?.(
                 `
-                SELECT SQL_CALC_FOUND_ROWS * FROM dm_products WHERE 
+                SELECT SQL_CALC_FOUND_ROWS * FROM dm_goods WHERE 
                 ${ keyword ? `description LIKE "%${ keyword }%" AND` : '' } 
-                onLine=100 ${ sql } LIMIT ${ current * pageSize }, ${ pageSize };
+                status=1 ${ sql } LIMIT ${ current * pageSize }, ${ pageSize };
                 SELECT FOUND_ROWS() as total;
                 `,
                 null, 
                 (err, reuslt) => !err ? resolve([reuslt?.[0] || [], reuslt?.[1]?.[0]?.total || 0]) : reject(err),
             );
         });
+
+        if(Array.isArray(dataSource)) {
+            dataSource.forEach(item => {
+                const main_picture = item?.['main_picture'];
+                if(main_picture) {
+                    item['main_picture'] = `${ config.REQUEST_URL }${ config.GOODS_MAIN_PATH }/${ main_picture }`;
+                }
+            })
+        }
     
         res.status(200).send({
             code: "DM-000000",
@@ -105,11 +114,11 @@ router.post('/public/select', async (req, res) => {
 router.get('/public/select/filter', async (req, res) => {
     try {
         const promise_list = [];
-        ['brandId', 'screenSize', 'cpu', 'memory', 'disk', 'thickness', 'systems'].forEach(item => {
+        ['brand_id', 'screen_size', 'cpu', 'memory', 'disk', 'thickness', 'systems'].forEach(item => {
             promise_list.push(
                 new Promise((resolve, reject) => {
                     req?.pool?.query?.(
-                        `SELECT ${ item } FROM dm_products`,
+                        `SELECT ${ item } FROM dm_goods`,
                         null, 
                         (err, reuslt) => !err ? resolve({ [item]: reuslt }) : reject(err),
                     )
@@ -127,20 +136,20 @@ router.get('/public/select/filter', async (req, res) => {
     
         const brand_list = await new Promise((resolve, reject) => {
             req?.pool?.query?.(
-                `SELECT * FROM dm_brands `,
+                "SELECT * FROM dm_brands",
                 null, 
                 (err, reuslt) => !err ? resolve(reuslt) : reject(err),
             )
-        })
+        });
     
         const content = {};
         reuslt.forEach(item => {
             Object.entries(item).forEach(([key, value]) => {
                 let arr = lodash.uniqBy(value, key).map(item02 => item02[key]);
-                if(['brandId'].includes(key)) {
+                if(['brand_id'].includes(key)) {
                     key = 'brands';
                     if(Array.isArray(brand_list)) {
-                        arr = brand_list.filter(item03 => arr.includes(String(item03?.id)));
+                        arr = brand_list.filter(item03 => arr.includes(String(item03?.brand_id)));
                     }
                 }
                 content[key] = arr;
@@ -150,6 +159,7 @@ router.get('/public/select/filter', async (req, res) => {
         res.status(200).send({
             code: "DM-000000",
             content,
+            brand_list,
         });
     } catch (error) {
         res.status(500).send({

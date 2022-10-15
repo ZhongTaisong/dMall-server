@@ -81,7 +81,7 @@ router.post('/select', async (req, res) => {
             promise_list.push(
                 new Promise((resolve, reject) => {
                     req?.pool?.query?.(
-                        "SELECT id, mainPicture, description, spec, price FROM dm_products WHERE id IN (?)", 
+                        "SELECT id, main_picture, description, spec, price FROM dm_goods WHERE id IN (?)", 
                         [pids], 
                         (err, reuslt) => !err ? resolve(reuslt) : reject(err),
                     )
@@ -91,6 +91,15 @@ router.post('/select', async (req, res) => {
     
         let goods_infos_all = await kit.promiseAllSettled(promise_list);
         goods_infos_all = lodash.uniqBy(goods_infos_all.flat(), "id");
+
+        if(Array.isArray(goods_infos_all)) {
+            goods_infos_all.forEach(item => {
+                const main_picture = item?.['main_picture'];
+                if(main_picture) {
+                    item['main_picture'] = `${ config.REQUEST_URL }${ config.GOODS_MAIN_PATH }/${ main_picture }`;
+                }
+            })
+        }
     
         order_list.forEach(item => {
             const order_infos = JSON.parse(item?.order_infos || '[]');
@@ -101,7 +110,7 @@ router.post('/select', async (req, res) => {
                     item03['num'] = order_infos.find(item04 => item04?.pid === item03?.id)?.num ?? 1;
                     item03['order_no'] = item?.order_no;
                     item03['total_price'] = item?.total_price;
-                })
+                });
                 item['goods_infos'] = arr;
             }
         });

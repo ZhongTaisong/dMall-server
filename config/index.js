@@ -39,3 +39,23 @@ exports.REQUEST_URL = `http://127.0.0.1:${ PORT }/api`;
  * 接口请求成功code
  */
 exports.SUCCESS_CODE = "DM-000000";
+
+/**
+ * 用户头像 - 图片存储路径
+ */
+exports.AVATAR_PATH = "/public/assets/images/avatar";
+
+/**
+ * banner - 图片存储路径
+ */
+exports.BANNER_PATH = "/public/assets/images/goods/banner";
+
+/**
+ * 商品详情 - 图片存储路径
+ */
+exports.GOODS_DETAIL_PATH = "/public/assets/images/goods/detail";
+
+/**
+ * 商品主图 - 图片存储路径
+ */
+exports.GOODS_MAIN_PATH = "/public/assets/images/goods/main";

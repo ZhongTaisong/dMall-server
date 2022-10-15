@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const moment = require('moment');
 const kit = require('./../kit');
+const config = require('./../config');
 /**
  * 留言
  */
@@ -41,6 +42,15 @@ router.get('/public/select', async (req, res) => {
             content.forEach(item => {
                 const data = userList.find(item02 => item?.uname === item02?.uname);
                 item['avatar'] = data?.['avatar'] || null;
+            })
+        }
+
+        if(Array.isArray(content)) {
+            content.forEach(item => {
+                const avatar = item?.['avatar'];
+                if(avatar) {
+                    item['avatar'] = `${ config.REQUEST_URL }${ config.AVATAR_PATH }/${ avatar }`;
+                }
             })
         }
 

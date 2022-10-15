@@ -37,7 +37,7 @@ router.get('/select', async (req, res) => {
                 promise_list.push(
                     new Promise((resolve, reject) => {
                         req?.pool?.query?.(
-                            "SELECT * FROM dm_products WHERE id=?",
+                            "SELECT * FROM dm_goods WHERE id=?",
                             [item?.pid], 
                             (err, data) => !err ? resolve(data?.[0] || {}) : reject(err),
                         )
@@ -46,6 +46,14 @@ router.get('/select', async (req, res) => {
             });
         }
         const goods_list = await kit.promiseAllSettled(promise_list);
+        if(Array.isArray(goods_list)) {
+            goods_list.forEach(item => {
+                const main_picture = item?.['main_picture'];
+                if(main_picture) {
+                    item['main_picture'] = `${ config.REQUEST_URL }${ config.GOODS_MAIN_PATH }/${ main_picture }`;
+                }
+            })
+        }
 
         if(Array.isArray(result) && Array.isArray(goods_list)) {
             result.forEach(item => {

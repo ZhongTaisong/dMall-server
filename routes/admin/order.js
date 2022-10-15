@@ -71,7 +71,7 @@ router.post('/select', async (req, res) => {
             promise_list.push(
                 new Promise((resolve, reject) => {
                     req?.pool?.query?.(
-                        "SELECT id, mainPicture, description, spec, price FROM dm_products WHERE id IN (?)", 
+                        "SELECT id, main_picture, description, spec, price FROM dm_goods WHERE id IN (?)", 
                         [pids], 
                         (err, reuslt) => !err ? resolve(reuslt) : reject(err),
                     )

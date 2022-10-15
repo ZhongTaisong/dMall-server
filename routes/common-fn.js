@@ -1,4 +1,5 @@
 const kit = require('./../kit');
+const config = require('./../config');
 
 /** 路由器标识 */
 const ROUTER_Flag = "COMMON-FN";
@@ -194,7 +195,7 @@ exports.selectOrderDetailsFn = async (req) => {
         }),
         new Promise((resolve, reject) => {
             req?.pool?.query?.(
-                "SELECT mainPicture, description, spec, id FROM dm_products WHERE id IN (?)", 
+                "SELECT main_picture, description, spec, id FROM dm_goods WHERE id IN (?)", 
                 [pids], 
                 (err, reuslt) => !err ? resolve(reuslt) : reject(err),
             )
@@ -220,6 +221,16 @@ exports.selectOrderDetailsFn = async (req) => {
 
     result01['total_num'] = total_num;
     delete result01['order_infos'];
+
+    if(Array.isArray(result03)) {
+        result03.forEach(item => {
+            const main_picture = item?.['main_picture'];
+            if(main_picture) {
+                item['main_picture'] = `${ config.REQUEST_URL }${ config.GOODS_MAIN_PATH }/${ main_picture }`;
+            }
+        })
+    }
+
     return {
         status: 200,
         sendContent: {
