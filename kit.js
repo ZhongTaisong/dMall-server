@@ -3,6 +3,7 @@ const fs = require('fs');
 const path = require('path');
 const lodash = require('lodash');
 const uuid = require('uuid');
+const multer = require('multer');
 const redisClient = require('./redis-client');
 
 /**
@@ -170,4 +171,36 @@ exports.validatePhone = (value) => {
 /**
  * 生成 - 初始密码
  */
- exports.getInitPassword = () => Math.random().toString().slice(2, 8);
+exports.getInitPassword = () => Math.random().toString().slice(2, 8);
+
+/**
+ * 上传图片 - 配置项
+ */
+exports.upload = (pathname) => (filenameKey) => {
+    return multer({ 
+        storage: multer.diskStorage({
+            destination: function(req, file, cb) {
+                if(!pathname) return;
+
+                const _pathname = path.join(__dirname, ".", pathname);
+                if(!fs.existsSync(_pathname)) {
+                    fs.mkdirSync(_pathname, { recursive: true, });
+                }
+
+                cb(null, _pathname);
+            },
+            filename: function(req, file, cb) {
+                if(!file || !Object.keys(file).length) return;
+
+                const { mimetype, } = file;
+                const key = Date.now() + '_' + Math.round(Math.random() * 1E9);
+                const suffix = {
+                    "image/png": 'png',
+                    "image/jpeg": 'jpg',
+                };
+                
+                cb(null, `${ filenameKey || key }.${ suffix[mimetype] || 'jpg' }`);
+            }
+        }), 
+    });
+};

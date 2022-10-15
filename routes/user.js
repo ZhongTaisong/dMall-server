@@ -363,9 +363,35 @@ router.post('/public/register', async (req, res) => {
 /**
  * 更新用户信息
  */
-router.put('/update/user-information', async (req, res) => {
+router.put('/update/user-information', (req, res, next) => {
+    const { uname } = req.headers || {};
+    if(!uname){
+        return res.status(400).send({
+            code: `DM-${ ROUTER_Flag }-000043`,
+            msg: '请求头uname不能为空!',
+        });
+    }
+
+    kit.upload(config.AVATAR_PATH)(kit.md5(uname)).single('avatar')(req, res, next);
+
+}, async (req, res) => {
     try {
-        const { id, nickName, phone, birthday, gender, } = req.body || {};
+        let { user_info, } = req.body || {};
+        const { filename, } = req.file || {};
+        try {
+            user_info = JSON.parse(user_info || '{}');
+        } catch (error) {
+            user_info = {};
+        }
+
+        if(!user_info || !Object.keys(user_info).length) {
+            return res.status(400).send({
+                code: `DM-${ ROUTER_Flag }-000042`,
+                msg: 'user_info不能为空!',
+            });
+        }
+
+        const { id, nickName, phone, birthday, gender, } = user_info || {};
         if(!id){
             return res.status(400).send({
                 code: `DM-${ ROUTER_Flag }-000031`,
@@ -401,17 +427,20 @@ router.put('/update/user-information', async (req, res) => {
             });
         }
 
+        const params = [nickName, phone, birthday, gender, id];
+        if(filename) {
+            params.unshift(filename);
+        }
         await new Promise((resolve, reject) => {
             req?.pool?.query?.(
-                "UPDATE dm_user SET nickName=?, phone=?, birthday=?, gender=? WHERE id=?", 
-                [nickName, phone, birthday, gender, id],
+                `UPDATE dm_user SET ${ filename ? "avatar=?, " : "" }nickName=?, phone=?, birthday=?, gender=? WHERE id=?`, 
+                params,
                 (err, data) => !err ? resolve(data) : reject(err),
             )
         });
         
         res.status(200).send({
             code: "DM-000000",
-            content: req?.body || {},
             msg: "更新成功!",
         });
     } catch (error) {
@@ -439,11 +468,16 @@ router.get('/select/user-information', async (req, res) => {
 
         const content = await new Promise((resolve, reject) => {
             req?.pool?.query?.(
-                "SELECT id, uname, phone, gender, birthday, nickName FROM dm_user WHERE uname=?", 
+                "SELECT id, uname, phone, gender, birthday, nickName, avatar FROM dm_user WHERE uname=?", 
                 [uname],
                 (err, data) => !err ? resolve(data?.[0] || {}) : reject(err),
             )
         });
+
+        const avatar = content?.['avatar'];
+        if(avatar) {
+            content['avatar'] = `${ config.AVATAR_PATH }/${ avatar }`;
+        }
         
         res.status(200).send({
             code: "DM-000000",
