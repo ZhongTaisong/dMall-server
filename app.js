@@ -37,7 +37,7 @@ app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
-app.use('/api', express.static(path.join(__dirname, 'public')));
+app.use('/api/public', express.static(path.join(__dirname, 'public')));
 
 /** 将pool挂在到req上 */
 app.use((req, res, next) => {
@@ -66,7 +66,7 @@ app.use(async (req, res, next) => {
   next();
 });
 
-/** 接口路由 */
+/** 路由中间件 */
 app.use('/api/home', require('./routes/home.js'));
 app.use('/api/goods-list', require('./routes/goods-list.js'));
 app.use('/api/goods-detail', require('./routes/goods-detail.js'));
