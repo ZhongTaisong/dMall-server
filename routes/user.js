@@ -74,6 +74,11 @@ router.post('/public/login', async (req, res) => {
         });
         content['token'] = `Bearer ${ tokenStr }`;
 
+        const avatar = content?.['avatar'];
+        if(avatar) {
+            content['avatar'] = `${ config.REQUEST_URL }${ config.AVATAR_PATH }/${ avatar }`;
+        }
+
         delete content['upwd'];
         delete content['ukey'];
         res.status(200).send({
@@ -476,7 +481,7 @@ router.get('/select/user-information', async (req, res) => {
 
         const avatar = content?.['avatar'];
         if(avatar) {
-            content['avatar'] = `${ config.AVATAR_PATH }/${ avatar }`;
+            content['avatar'] = `${ config.REQUEST_URL }${ config.AVATAR_PATH }/${ avatar }`;
         }
         
         res.status(200).send({
