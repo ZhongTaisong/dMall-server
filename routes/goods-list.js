@@ -71,8 +71,8 @@ router.post('/public/select', async (req, res) => {
             req?.pool?.query?.(
                 `
                 SELECT SQL_CALC_FOUND_ROWS * FROM dm_goods WHERE 
-                ${ keyword ? `description LIKE "%${ keyword }%" AND` : '' } 
-                status=1 ${ sql } LIMIT ${ current * pageSize }, ${ pageSize };
+                ${ keyword ? `description LIKE "%${ keyword }%" OR goods_name LIKE "%${ keyword }%" AND` : '' } 
+                status=1 ${ sql } ORDER BY update_time DESC LIMIT ${ current * pageSize }, ${ pageSize };
                 SELECT FOUND_ROWS() as total;
                 `,
                 null, 

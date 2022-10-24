@@ -377,7 +377,7 @@ router.put('/update/user-information', (req, res, next) => {
         });
     }
 
-    kit.upload(config.AVATAR_PATH)(kit.md5(uname)).single('avatar')(req, res, next);
+    kit.upload(kit.md5(uname)).single('avatar')(req, res, next);
 
 }, async (req, res) => {
     try {

@@ -214,4 +214,37 @@ router.delete('/delete/:brand_id', async (req, res) => {
     }
 });
 
+/**
+ * 查询 - 所有品牌
+ */
+router.get('/select/all', async (req, res) => {
+    try {
+        const [dataSource, total] = await new Promise((resolve, reject) => {
+            req?.pool?.query?.(
+                `
+                SELECT SQL_CALC_FOUND_ROWS * FROM dm_brands ORDER BY update_time;
+                SELECT FOUND_ROWS() as total;
+                `,
+                null, 
+                (err, reuslt) => !err ? resolve([reuslt?.[0] || [], reuslt?.[1]?.[0]?.total || 0]) : reject(err),
+            );
+        });
+    
+        res.status(200).send({
+            code: "DM-000000",
+            content: {
+                dataSource,
+                total,
+            },
+        });
+    } catch (error) {
+        res.status(500).send({
+            code: `DM-${ ROUTER_Flag }-000016`,
+            msg: '操作失败!',
+            error,
+            errorMsg: error?.message,
+        });
+    }
+});
+
 module.exports = router;

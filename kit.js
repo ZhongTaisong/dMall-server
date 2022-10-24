@@ -5,6 +5,7 @@ const lodash = require('lodash');
 const uuid = require('uuid');
 const multer = require('multer');
 const redisClient = require('./redis-client');
+const config = require('./config');
 
 /**
  * 获取 - 请求成功后的数据
@@ -176,10 +177,20 @@ exports.getInitPassword = () => Math.random().toString().slice(2, 8);
 /**
  * 上传图片 - 配置项
  */
-exports.upload = (pathname) => (filenameKey) => {
+exports.upload = (filenameKey) => {
     return multer({ 
         storage: multer.diskStorage({
             destination: function(req, file, cb) {
+                if(!file || !Object.keys(file).length) return;
+
+                const { fieldname, } = file;
+                const pathname = {
+                    avatar: config.AVATAR_PATH,
+                    main_picture: config.GOODS_MAIN_PATH,
+                    goods_picture: config.GOODS_MAIN_PATH,
+                    detail_picture: config.GOODS_DETAIL_PATH,
+                    banner_picture: config.BANNER_PATH,
+                }[fieldname];
                 if(!pathname) return;
 
                 const _pathname = path.join(__dirname, ".", pathname);

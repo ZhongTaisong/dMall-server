@@ -39,10 +39,10 @@ router.get("/public/select/:id", async (req, res) => {
         let images = [];
         let detailImgs = [];
         if(result01 && Object.keys(result01).length) {
-            const { main_picture, pictures, detail_picture } = result01;
+            const { main_picture, goods_picture, detail_picture } = result01;
 
-            images = pictures?.split?.("|") || [];
-            delete result01['pictures'];
+            images = goods_picture?.split?.("|") || [];
+            delete result01['goods_picture'];
             detailImgs = detail_picture?.split?.("|") || [];
             delete result01['detail_picture'];
             if(main_picture) {
