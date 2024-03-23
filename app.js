@@ -83,6 +83,7 @@ app.use('/api/admin/goods-evaluate', require('./routes/admin/goods-evaluate.js')
 app.use('/api/admin/goods', require('./routes/admin/goods.js'));
 app.use('/api/admin/user', require('./routes/admin/user.js'));
 app.use('/api/admin/permission', require('./routes/admin/permission.js'));
+app.use('/public/api/docs', require('./routes/swagger/index.js'));
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
