@@ -4,7 +4,8 @@
   "private": true,
   "main": "app.js",
   "scripts": {
-    "start": "nodemon --config ./nodemon.json ./bin/www",
+    "start:redis": "redis-server",
+    "start": "npm run start:redis & nodemon --config ./nodemon.json ./bin/www",
     "client": "nodemon ./client.js"
   },
   "author": "zhongtaisong",
