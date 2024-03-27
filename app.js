@@ -5,6 +5,7 @@ const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const logger = require('morgan');
 const helmet = require('helmet');
+const session = require('express-session');
 // 验证token
 const { expressjwt } = require('express-jwt');
 const pool = require('./pool');
@@ -39,6 +40,13 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use('/api/public', express.static(path.join(__dirname, 'public')));
 
+app.use(session({
+  secret: config.SECRET_KEY, 
+  resave: false,
+  saveUninitialized: true,
+  cookie: { secure: true },
+}));
+
 /** 将pool挂在到req上 */
 app.use((req, res, next) => {
   req.pool = pool;
@@ -54,12 +62,16 @@ app.use(
 );
 
 /** 当“退出登录”时，验证token是否在jwt黑名单中 */
-app.use(async (req, res, next) => {
-  const { authorization, uname, } = req.headers;
+app.use((req, res, next) => {
+  const { authorization, } = req.headers;
   if(!config.PUBLIC_PATH.test(req.url)) {
-    const pwd = await kit.getRedisHashValue(config.REDIS_KEY.DMALL_JWT_BLACKLIST, uname);
-    if(pwd === authorization.slice(7)) {
-      return next(createError(401));
+    const session = req.session;
+    const token = authorization.slice(7);
+    if(session && Object.keys(session).length) {
+      const user_name = session[token];
+      if(!user_name) {
+        return next(createError(401));
+      }
     }
   }
 

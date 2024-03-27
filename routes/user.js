@@ -74,6 +74,10 @@ router.post('/public/login', async (req, res) => {
         });
         content['token'] = `Bearer ${ tokenStr }`;
 
+        if(tokenStr) {
+            req.session[tokenStr] = uname;
+        }
+
         const avatar = content?.['avatar'];
         if(avatar) {
             content['avatar'] = `${ config.REQUEST_URL }${ config.AVATAR_PATH }/${ avatar }`;
@@ -101,11 +105,11 @@ router.post('/public/login', async (req, res) => {
  */
 router.get('/public/logout', (req, res) => {
     try {
-        const { uname, authorization, } = req.headers;
-        // 将当前token存入redis黑名单
-        kit.setRedisHashValue(config.REDIS_KEY.DMALL_JWT_BLACKLIST, {
-            [uname]: authorization.slice(7),
-        });
+        const { authorization, } = req.headers;
+        if(authorization) {
+            const token = authorization.slice(7);
+            delete req.session[token];
+        }
     
         res.status(200).send({
             code: "DM-000000",

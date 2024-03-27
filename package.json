@@ -4,8 +4,11 @@
   "private": true,
   "main": "app.js",
   "scripts": {
+    "start:mysql": "mysql.server start",
+    "stop:mysql": "mysql.server stop",
     "start:redis": "redis-server",
-    "start": "npm run start:redis & nodemon --config ./nodemon.json ./bin/www",
+    "dev": "NODE_ENV=development nodemon --config ./nodemon.json ./bin/www",
+    "start": "NODE_ENV=production node ./bin/www",
     "client": "nodemon ./client.js"
   },
   "author": "zhongtaisong",
@@ -27,7 +30,9 @@
     "morgan": "~1.10.0",
     "multer": "^1.4.5-lts.1",
     "mysql": "^2.18.1",
+    "mysql2": "^3.9.2",
     "redis": "^4.3.1",
+    "sequelize": "^6.37.1",
     "swagger-ui-express": "^5.0.0",
     "uuid": "^9.0.0",
     "yaml": "^2.4.1"
