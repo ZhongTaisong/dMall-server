@@ -1,6 +1,6 @@
-const MODEL_NAME = "userModel";
 const db = require("./../model/index");
-const Model = db[MODEL_NAME];
+const kit = require('./../../kit');
+const Model = db['user'];
 const Op = db.Sequelize.Op;
 
 /**
@@ -10,30 +10,56 @@ const Op = db.Sequelize.Op;
  * @returns 
  */
 exports.create = (req, res) => {
-  // Validate request
-  if (!req.body.title) {
-    res.status(400).send({
-      message: "内容不能为空"
-    });
-    return;
+  const body = req.body;
+  if(!body || !Object.keys(body).length) {
+    return res.status(400).send(
+      kit.setResponseDataFormat("DM000001")()( "缺少必要参数")
+    );
   }
 
-  // 创建一条清单
-  const todo = {
-    title: req.body.title,
-    description: req.body.description,
-    stauts: req.body.stauts ? req.body.stauts : false
-  };
+  Model.create(body).then(data => {
+    const result = data.toJSON();
+    delete result['password'];
+    res.status(200).send(
+      kit.setResponseDataFormat()(result)()
+    );
+  }).catch(err => {
+    res.status(500).send(
+      kit.setResponseDataFormat("DM000002")()(err.message)
+    );
+  });
+};
 
-  // 将清单保存到数据库
-  Todo.create(todo)
-    .then(data => {
-      res.send(data);
+/**
+ * 删除指定用户
+ * @param {*} req 
+ * @param {*} res 
+ */
+exports.delete = (req, res) => {
+  const params = req.params;
+  if(!params || !Object.keys(params).length) {
+    return res.status(400).send(
+      kit.setResponseDataFormat("DM000003")()( "缺少必要参数")
+    );
+  }
+
+  Model.destroy({
+    where: { id: id }
+  })
+    .then(num => {
+      if (num == 1) {
+        res.send({
+          message: "删除成功"
+        });
+      } else {
+        res.send({
+          message: `删除第${id}条清单失败。`
+        });
+      }
     })
     .catch(err => {
       res.status(500).send({
-        message:
-          err.message || "创建清单是发生错误。"
+        message: "不能删除清单：" + id
       });
     });
 };
@@ -97,31 +123,6 @@ exports.update = (req, res) => {
     .catch(err => {
       res.status(500).send({
         message: `更新第 ${id} 条清单时出错`
-      });
-    });
-};
-
-// Delete a Todo with the specified id in the request
-exports.delete = (req, res) => {
-  const id = req.params.id;
-
-  Todo.destroy({
-    where: { id: id }
-  })
-    .then(num => {
-      if (num == 1) {
-        res.send({
-          message: "删除成功"
-        });
-      } else {
-        res.send({
-          message: `删除第${id}条清单失败。`
-        });
-      }
-    })
-    .catch(err => {
-      res.status(500).send({
-        message: "不能删除清单：" + id
       });
     });
 };

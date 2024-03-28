@@ -215,3 +215,6 @@ exports.upload = (filenameKey) => {
         }), 
     });
 };
+
+/** 设置响应数据格式 */
+exports.setResponseDataFormat = (code = "DM000000") => (content = null) => (msg = null) => ({ code, content, msg, })

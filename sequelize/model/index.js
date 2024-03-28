@@ -1,5 +1,5 @@
 const { Sequelize, DataTypes } = require('sequelize');
-const dbConfig = require("./../config/db.config.json");
+const dbConfig = require("./../../config/db.config.json");
 const sequelize = new Sequelize(dbConfig.database, dbConfig.username, dbConfig.password, {
   host: dbConfig.host,
   dialect: dbConfig.dialect,
@@ -11,8 +11,8 @@ Object.assign(db, sequelize_config);
 
 const model_list = [
     {
-        name: "userModel",
-        model: require("./model/user.model"),
+        name: "user",
+        model: require("./user.model.js"),
     },
 ];
 model_list.forEach(item => {
@@ -24,10 +24,10 @@ model_list.forEach(item => {
     }
 })
 
-// sequelize.sync().then(() => {
-//     console.log("数据库同步成功");
-// }).catch(err => {
-//     console.log("数据库同步失败", err);
-// })
+sequelize.sync().then(() => {
+    console.log("数据库同步成功");
+}).catch(err => {
+    console.log("数据库同步失败", err);
+})
 
 module.exports = db;

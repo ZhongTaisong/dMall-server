@@ -1,5 +1,6 @@
 const createError = require('http-errors');
 const express = require('express');
+const router = express.Router();
 const path = require('path');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
@@ -12,7 +13,6 @@ const pool = require('./pool');
 const config = require('./config');
 const kit = require('./kit');
 const app = express();
-require("./model/index.js")
 // 路由器标识
 const ROUTER_Flag = "APP";
 
@@ -80,23 +80,25 @@ app.use((req, res, next) => {
 });
 
 /** 路由中间件 */
-app.use('/api/home', require('./routes/home.js'));
-app.use('/api/goods-list', require('./routes/goods-list.js'));
-app.use('/api/goods-detail', require('./routes/goods-detail.js'));
-app.use('/api/message-board', require('./routes/message-board.js'));
-app.use('/api/user', require('./routes/user.js'));
-app.use('/api/shopping-cart', require('./routes/shopping-cart.js'));
-app.use('/api/goods-evaluate', require('./routes/goods-evaluate.js'));
-app.use('/api/order', require('./routes/order.js'));
-app.use('/api/goods-collection', require('./routes/goods-collection.js'));
-app.use('/api/address', require('./routes/address.js'));
-app.use('/api/admin/brands', require('./routes/admin/brands.js'));
-app.use('/api/admin/order', require('./routes/admin/order.js'));
-app.use('/api/admin/goods-evaluate', require('./routes/admin/goods-evaluate.js'));
-app.use('/api/admin/goods', require('./routes/admin/goods.js'));
-app.use('/api/admin/user', require('./routes/admin/user.js'));
-app.use('/api/admin/permission', require('./routes/admin/permission.js'));
-app.use('/public/api/docs', require('./routes/swagger/index.js'));
+// app.use('/api/home', require('./routes/home.js'));
+// app.use('/api/goods-list', require('./routes/goods-list.js'));
+// app.use('/api/goods-detail', require('./routes/goods-detail.js'));
+// app.use('/api/message-board', require('./routes/message-board.js'));
+// app.use('/api/user', require('./routes/user.js'));
+// app.use('/api/shopping-cart', require('./routes/shopping-cart.js'));
+// app.use('/api/goods-evaluate', require('./routes/goods-evaluate.js'));
+// app.use('/api/order', require('./routes/order.js'));
+// app.use('/api/goods-collection', require('./routes/goods-collection.js'));
+// app.use('/api/address', require('./routes/address.js'));
+// app.use('/api/admin/brands', require('./routes/admin/brands.js'));
+// app.use('/api/admin/order', require('./routes/admin/order.js'));
+// app.use('/api/admin/goods-evaluate', require('./routes/admin/goods-evaluate.js'));
+// app.use('/api/admin/goods', require('./routes/admin/goods.js'));
+// app.use('/api/admin/user', require('./routes/admin/user.js'));
+// app.use('/api/admin/permission', require('./routes/admin/permission.js'));
+// app.use('/public/api/docs', require('./routes/swagger/index.js'));
+
+app.use('/api/user', require('./router/user.router.js')(router));
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
