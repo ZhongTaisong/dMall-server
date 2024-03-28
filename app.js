@@ -12,6 +12,7 @@ const pool = require('./pool');
 const config = require('./config');
 const kit = require('./kit');
 const app = express();
+require("./model/index.js")
 // 路由器标识
 const ROUTER_Flag = "APP";
 

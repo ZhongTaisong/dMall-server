@@ -1,0 +1,7 @@
+{
+    "database": "demo_mall_2024",
+    "username": "root",
+    "password": "123456",
+    "host": "127.0.0.1",
+    "dialect": "mysql"
+}
