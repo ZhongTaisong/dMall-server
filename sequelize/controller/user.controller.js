@@ -1,6 +1,7 @@
 const db = require("./../model/index");
 const kit = require('./../../kit');
-const Model = db['user'];
+const model_name = "user";
+const Model = db[model_name];
 const Op = db.Sequelize.Op;
 
 /**
@@ -10,24 +11,22 @@ const Op = db.Sequelize.Op;
  * @returns 
  */
 exports.create = (req, res) => {
-  const body = req.body;
-  if(!body || !Object.keys(body).length) {
-    return res.status(400).send(
-      kit.setResponseDataFormat("DM000001")()( "缺少必要参数")
-    );
-  }
-
-  Model.create(body).then(data => {
-    const result = data.toJSON();
-    delete result['password'];
-    res.status(200).send(
-      kit.setResponseDataFormat()(result)()
-    );
-  }).catch(err => {
-    res.status(500).send(
-      kit.setResponseDataFormat("DM000002")()(err.message)
-    );
-  });
+    try {
+        const body = req.body || {};
+        if(!body || !Object.keys(body).length) {
+          return res.status(400).send(kit.setResponseDataFormat("USER000001")()("缺少必要参数"));
+        }
+      
+        Model.create(body).then(data => {
+          const result = data.toJSON();
+          delete result['password'];
+          res.status(200).send(kit.setResponseDataFormat()(result)());
+        }).catch(err => {
+          res.status(500).send(kit.setResponseDataFormat("USER000002")()(err.message));
+        });
+    } catch (error) {
+        res.status(500).send(kit.setResponseDataFormat("USER000003")()(error.message));
+    }
 };
 
 /**
@@ -36,33 +35,50 @@ exports.create = (req, res) => {
  * @param {*} res 
  */
 exports.delete = (req, res) => {
-  const params = req.params;
-  if(!params || !Object.keys(params).length) {
-    return res.status(400).send(
-      kit.setResponseDataFormat("DM000003")()( "缺少必要参数")
-    );
-  }
-
-  Model.destroy({
-    where: { id: id }
-  })
-    .then(num => {
-      if (num == 1) {
-        res.send({
-          message: "删除成功"
+    try {
+        const params = req.params || {};
+        Model.destroy({
+          where: params,
+        }).then(() => {
+            res.status(200).send(kit.setResponseDataFormat()()("删除成功"));
+        }).catch(err => {
+            res.status(500).send(kit.setResponseDataFormat("USER000006")()(err.message));
         });
-      } else {
-        res.send({
-          message: `删除第${id}条清单失败。`
-        });
-      }
-    })
-    .catch(err => {
-      res.status(500).send({
-        message: "不能删除清单：" + id
-      });
-    });
+    } catch (error) {
+        res.status(500).send(kit.setResponseDataFormat("USER000005")()(error.message));
+    }
 };
+
+/**
+ * 更新指定用户
+ * @param {*} req 
+ * @param {*} res 
+ */
+exports.update = (req, res) => {
+    try {
+        const body = req.body || {};
+        if(!body || !Object.keys(body).length) {
+          return res.status(400).send(kit.setResponseDataFormat("USER000008")()("缺少必要参数"));
+        }
+
+        const { id, ...rest } = body;
+        if(!id) {
+          return res.status(400).send(kit.setResponseDataFormat("USER000010")()("id不能为空"));
+        }
+
+        Model.update(rest, {
+          where: { id, },
+        }).then(() => {
+            res.status(200).send(kit.setResponseDataFormat()()("更新成功"));
+        }).catch(err => {
+            res.status(500).send(kit.setResponseDataFormat("USER000009")()(err.message));
+        });
+    } catch (error) {
+        res.status(500).send(kit.setResponseDataFormat("USER000007")()(error.message));
+    }
+};
+
+
 
 // 从数据库中搜索.
 exports.findAll = (req, res) => {
@@ -98,48 +114,6 @@ exports.findOne = (req, res) => {
     .catch(err => {
       res.status(500).send({
         message:  `查询第 ${id} 条清单时出错`
-      });
-    });
-};
-
-// 更新指定 ID 清单
-exports.update = (req, res) => {
-  const id = req.params.id;
-
-  Todo.update(req.body, {
-    where: { id: id }
-  })
-    .then(num => {
-      if (num == 1) {
-        res.send({
-          message: "更新成功"
-        });
-      } else {
-        res.send({
-          message: `第 ${id} 条更新失败。`
-        });
-      }
-    })
-    .catch(err => {
-      res.status(500).send({
-        message: `更新第 ${id} 条清单时出错`
-      });
-    });
-};
-
-// 删除数据库中所有清单
-exports.deleteAll = (req, res) => {
-  Todo.destroy({
-    where: {},
-    truncate: false
-  })
-    .then(nums => {
-      res.send({ message: `删除${nums}条清单 ` });
-    })
-    .catch(err => {
-      res.status(500).send({
-        message:
-          err.message || "删除所有清单时出错"
       });
     });
 };

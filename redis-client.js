@@ -10,7 +10,7 @@ client.on('connect', function() {
 
 // 监听redis错误
 client.on('error', function(err) {
-    console.log('Redis客户端错误!', err);
+    // console.log('Redis客户端错误!', err);
 });
 
 // 连接redis

@@ -10,5 +10,7 @@ module.exports = (router) => {
     router.post('/public/register', userController.create);
     /** 删除指定用户 */
     router.delete('/public/delete/:id', userController.delete);
+    /** 更新指定用户 */
+    router.put('/public/update', userController.update);
     return router;
 }

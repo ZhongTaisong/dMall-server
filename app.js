@@ -100,11 +100,6 @@ app.use((req, res, next) => {
 
 app.use('/api/user', require('./router/user.router.js')(router));
 
-// catch 404 and forward to error handler
-app.use(function(req, res, next) {
-  next(createError(404));
-});
-
 // error handler
 app.use(function(err, req, res, next) {
   if(err.status === 401) {
