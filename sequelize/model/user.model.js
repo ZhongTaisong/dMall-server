@@ -48,5 +48,7 @@ module.exports = (sequelize, DataTypes) => {
     }, {
         /** 表名称与模型名称一致 */
         freezeTableName: true,
+        /** 启用时间戳 */
+        timestamps: true,
     });
 };

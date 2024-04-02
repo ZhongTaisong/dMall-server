@@ -218,3 +218,15 @@ exports.upload = (filenameKey) => {
 
 /** 设置响应数据格式 */
 exports.setResponseDataFormat = (code = "DM000000") => (content = null) => (msg = null) => ({ code, content, msg, });
+
+/** 批量删除对象属性 - 操作 */
+exports.batchDeleteObjKeyFn = (obj) => (list) => {
+    if(!Array.isArray(list) || !list.length) return;
+    if(!obj || !Object.keys(obj).length) return;
+
+    list.forEach(item => {
+        if(item) {
+            delete obj[item];
+        }
+    })
+}

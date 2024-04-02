@@ -12,5 +12,7 @@ module.exports = (router) => {
     router.delete('/public/delete/:id', userController.delete);
     /** 更新指定用户 */
     router.put('/public/update', userController.update);
+    /** 根据筛选条件查询用户 */
+    router.post('/public/findAll', userController.findAll);
     return router;
 }

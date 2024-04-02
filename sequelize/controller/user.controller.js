@@ -14,18 +14,20 @@ exports.create = (req, res) => {
     try {
         const body = req.body || {};
         if(!body || !Object.keys(body).length) {
-          return res.status(400).send(kit.setResponseDataFormat("USER000001")()("缺少必要参数"));
+          return res.status(400).send(kit.setResponseDataFormat("USER-CREATE-000001")()("缺少必要参数"));
         }
+
+        kit.batchDeleteObjKeyFn(body)(["id", "createdAt", "updatedAt"]);
       
         Model.create(body).then(data => {
           const result = data.toJSON();
-          delete result['password'];
+          kit.batchDeleteObjKeyFn(result)(["password",]);
           res.status(200).send(kit.setResponseDataFormat()(result)());
         }).catch(err => {
-          res.status(500).send(kit.setResponseDataFormat("USER000002")()(err.message));
+          res.status(500).send(kit.setResponseDataFormat("USER-CREATE-000002")()(err.message));
         });
     } catch (error) {
-        res.status(500).send(kit.setResponseDataFormat("USER000003")()(error.message));
+        res.status(500).send(kit.setResponseDataFormat("USER-CREATE-000003")()(error.message));
     }
 };
 
@@ -42,10 +44,10 @@ exports.delete = (req, res) => {
         }).then(() => {
             res.status(200).send(kit.setResponseDataFormat()()("删除成功"));
         }).catch(err => {
-            res.status(500).send(kit.setResponseDataFormat("USER000006")()(err.message));
+            res.status(500).send(kit.setResponseDataFormat("USER-DELETE-000001")()(err.message));
         });
     } catch (error) {
-        res.status(500).send(kit.setResponseDataFormat("USER000005")()(error.message));
+        res.status(500).send(kit.setResponseDataFormat("USER-DELETE-000002")()(error.message));
     }
 };
 
@@ -58,76 +60,76 @@ exports.update = (req, res) => {
     try {
         const body = req.body || {};
         if(!body || !Object.keys(body).length) {
-          return res.status(400).send(kit.setResponseDataFormat("USER000008")()("缺少必要参数"));
+          return res.status(400).send(kit.setResponseDataFormat("USER-UPDATE-000001")()("缺少必要参数"));
         }
 
         const { id, ...rest } = body;
         if(!id) {
-          return res.status(400).send(kit.setResponseDataFormat("USER000010")()("id不能为空"));
+          return res.status(400).send(kit.setResponseDataFormat("USER-UPDATE-000002")()("id不能为空"));
         }
 
         Model.update(rest, {
           where: { id, },
+          // 只保存这几个字段到数据库中
+          fields: ['nickname', 'avatar'],
         }).then(() => {
             res.status(200).send(kit.setResponseDataFormat()()("更新成功"));
         }).catch(err => {
-            res.status(500).send(kit.setResponseDataFormat("USER000009")()(err.message));
+            res.status(500).send(kit.setResponseDataFormat("USER-UPDATE-000003")()(err.message));
         });
     } catch (error) {
-        res.status(500).send(kit.setResponseDataFormat("USER000007")()(error.message));
+        res.status(500).send(kit.setResponseDataFormat("USER-UPDATE-000005")()(error.message));
     }
 };
 
-
-
-// 从数据库中搜索.
+/**
+ * 根据筛选条件查询用户
+ * @param {*} req 
+ * @param {*} res 
+ */
 exports.findAll = (req, res) => {
-  const title = req.query.title;
-  var condition = title ? { title: { [Op.like]: `%${title}%` } } : null;
-
-  Todo.findAll({ where: condition })
-    .then(data => {
-      res.send(data);
-    })
-    .catch(err => {
-      res.status(500).send({
-        message:
-          err.message || "搜索时，发生错误。"
+  try {
+    const { phone, nickname, id, } = req.body || {};
+    const params = {};
+    if(id) {
+      Object.assign(params, {
+        id,
       });
-    });
-};
+    }
 
-// 按照条目 ID 搜索
-exports.findOne = (req, res) => {
-  const id = req.params.id;
-
-  Todo.findByPk(id)
-    .then(data => {
-      if (data) {
-        res.send(data);
-      } else {
-        res.status(404).send({
-          message: `没有找到 ${id} 的清单`
-        });
-      }
-    })
-    .catch(err => {
-      res.status(500).send({
-        message:  `查询第 ${id} 条清单时出错`
+    const Op_and_list = [];
+    if(phone) {
+      Op_and_list.push({
+        phone: { [Op.like]: `%${phone}%` },
       });
-    });
-};
+    }
 
-// 检查所有清单状态
-exports.findAllstauts = (req, res) => {
-  Todo.findAll({ where: { stauts: true } })
-    .then(data => {
-      res.send(data);
-    })
-    .catch(err => {
-      res.status(500).send({
-        message:
-          err.message || "搜索清单时出错"
+    if(nickname) {
+      Op_and_list.push({
+        nickname: { [Op.like]: `%${nickname}%` },
       });
+    }
+
+    if(Op_and_list.length) {
+      Object.assign(params, {
+        [Op.and]: Op_and_list,
+      });
+    }
+
+    Model.findAll({ 
+      where: params,
+      attributes: { exclude: ['password'] },
+    }).then(data => {
+      data = Array.isArray(data) ? data : [];
+      const result = data.map(item => item.toJSON());
+      result.forEach(item => {
+        kit.batchDeleteObjKeyFn(item)(["password",]);
+      })
+      res.status(200).send(kit.setResponseDataFormat()(result)());
+    }).catch(err => {
+      res.status(500).send(kit.setResponseDataFormat("USER-FINDALL-000002")()(err.message));
     });
+  } catch (error) {
+    res.status(500).send(kit.setResponseDataFormat("USER-FINDALL-000001")()(error.message));
+  }
 };
