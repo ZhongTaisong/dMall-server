@@ -8,6 +8,8 @@ const userController = require("./../sequelize/controller/user.controller");
 module.exports = (router) => {
     /** 注册 */
     router.post('/public/register', userController.create);
+    /** 登录 */
+    router.post('/public/login', userController.login);
     /** 删除指定用户 */
     router.delete('/public/delete/:id', userController.delete);
     /** 更新指定用户 */

@@ -6,6 +6,8 @@ const uuid = require('uuid');
 const multer = require('multer');
 const redisClient = require('./redis-client');
 const config = require('./config');
+// 生成token
+const jwt = require('jsonwebtoken');
 
 /**
  * 获取 - 请求成功后的数据
@@ -229,4 +231,37 @@ exports.batchDeleteObjKeyFn = (obj) => (list) => {
             delete obj[item];
         }
     })
+}
+
+/**
+ * 校验 - 用户密码
+ * @param value
+ * @returns 
+ */
+exports.validatePasswordFn = (value) => {
+    const min = 6;
+    const max = 8;
+    const reg = new RegExp(`^[A-Za-z0-9]{${ min },${ max }}$`);
+    return {
+        bol: reg.test(value),
+        tip: "仅限输入数字、字母 或 两者组合",
+        min,
+        max,
+    };
+};
+
+/**
+ * 生成用户token - 操作
+ * @param {*} user_info 
+ * @param {*} expiresIn 
+ * @returns 
+ */
+exports.getTokenFn = (user_info = {}, expiresIn = '3h') => {
+    if(!user_info || !Object.keys(user_info).length) return null;
+
+    return jwt.sign(
+        user_info, 
+        config.SECRET_KEY, 
+        { expiresIn, },
+    );
 }

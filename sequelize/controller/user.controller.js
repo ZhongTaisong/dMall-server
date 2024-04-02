@@ -1,5 +1,6 @@
 const db = require("./../model/index");
 const kit = require('./../../kit');
+const config = require('./../../config');
 const model_name = "user";
 const Model = db[model_name];
 const Op = db.Sequelize.Op;
@@ -10,7 +11,7 @@ const Op = db.Sequelize.Op;
  * @param {*} res
  * @returns 
  */
-exports.create = (req, res) => {
+exports.create = async (req, res) => {
     try {
         const body = req.body || {};
         if(!body || !Object.keys(body).length) {
@@ -18,6 +19,16 @@ exports.create = (req, res) => {
         }
 
         kit.batchDeleteObjKeyFn(body)(["id", "createdAt", "updatedAt"]);
+
+        const { phone, } = body;
+        let isPhone = false;
+        if(phone) {
+          isPhone = await Model.findOne({ where: { phone, } });
+        }
+
+        if(isPhone) {
+          return res.status(200).send(kit.setResponseDataFormat("USER-CREATE-000005")()("手机号已被注册"));
+        }
       
         Model.create(body).then(data => {
           const result = data.toJSON();
@@ -29,6 +40,41 @@ exports.create = (req, res) => {
     } catch (error) {
         res.status(500).send(kit.setResponseDataFormat("USER-CREATE-000003")()(error.message));
     }
+};
+
+/**
+ * 登录用户
+ * @param {*} req
+ * @param {*} res
+ * @returns 
+ */
+exports.login = async (req, res) => {
+  try {
+    const body = req.body || {};
+    if(!body || !Object.keys(body).length) {
+      return res.status(400).send(kit.setResponseDataFormat("USER-LOGIN-000001")()("缺少必要参数"));
+    }
+
+    const { phone, password, } = body;
+    const pwd = kit.md5(`${ phone }${ password }`);
+    const result = await Model.findOne({ 
+      where: { phone, password: pwd, },
+      attributes: { exclude: ['password'] },
+    });
+
+    const user_info = result ? result.toJSON() : {};
+    if(!user_info || !Object.keys(user_info).length) {
+      return res.status(200).send(kit.setResponseDataFormat("USER-LOGIN-000003")()("用户名或密码错误"));
+    }
+
+    const token = kit.getTokenFn({ phone, });
+    Object.assign(user_info, { token, });
+  
+    res.status(200).send(kit.setResponseDataFormat()(user_info)("登录成功"));
+    
+  } catch (error) {
+      res.status(500).send(kit.setResponseDataFormat("USER-LOGIN-000002")()(error.message));
+  }
 };
 
 /**
