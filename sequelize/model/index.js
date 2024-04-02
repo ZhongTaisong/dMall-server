@@ -1,8 +1,10 @@
 const { Sequelize, DataTypes } = require('sequelize');
 const dbConfig = require("./../../config/db.config.json");
 const sequelize = new Sequelize(dbConfig.database, dbConfig.username, dbConfig.password, {
-  host: dbConfig.host,
-  dialect: dbConfig.dialect,
+    host: dbConfig.host,
+    dialect: dbConfig.dialect,
+    // 设置时区为东八区(国内标准时区)
+    timezone: '+08:00',
 });
 
 const db = {};
