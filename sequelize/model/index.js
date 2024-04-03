@@ -16,6 +16,10 @@ const model_list = [
         name: "user",
         model: require("./user.model.js"),
     },
+    {
+        name: "goods",
+        model: require("./goods.model.js"),
+    },
 ];
 model_list.forEach(item => {
     const { name, model, } = item;

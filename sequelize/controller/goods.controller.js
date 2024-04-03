@@ -1,6 +1,6 @@
 const db = require("./../model/index");
 const kit = require('./../../kit');
-const model_name = "user";
+const model_name = "goods";
 const Model = db[model_name];
 const Op = db.Sequelize.Op;
 

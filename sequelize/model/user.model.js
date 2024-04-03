@@ -6,8 +6,9 @@ const kit = require('./../../kit');
  * @param {*} DataTypes 数据类型
  * @returns 
  */
+const TABLE_NAME = "dm_user";
 module.exports = (sequelize, DataTypes) => {
-    return sequelize.define("dm_user333", {
+    return sequelize.define(TABLE_NAME, {
         phone: {
             type: DataTypes.STRING(11),
             comment: '手机号',

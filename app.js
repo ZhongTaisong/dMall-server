@@ -99,6 +99,7 @@ app.use((req, res, next) => {
 // app.use('/public/api/docs', require('./routes/swagger/index.js'));
 
 app.use('/api/user', require('./router/user.router.js')(router));
+app.use('/api/goods', require('./router/goods.router.js')(router));
 
 // error handler
 app.use(function(err, req, res, next) {
