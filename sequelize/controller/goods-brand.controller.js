@@ -20,15 +20,13 @@ exports.create = async (req, res) => {
       return res.status(400).send(kit.setResponseDataFormat("GOODS-BRAND-CREATE-000001")()("缺少必要参数"));
     }
 
-    kit.batchDeleteObjKeyFn(body)(["id", "createdAt", "updatedAt"]);
-
     const { brand_name, } = body;
     const bol = await isExistFn({ brand_name, });
     if(bol) {
       return res.status(200).send(kit.setResponseDataFormat("GOODS-BRAND-CREATE-000005")()("品牌名称已存在"));
     }
   
-    Model.create(body).then(data => {
+    Model.create({ brand_name, }).then(data => {
       const result = data.toJSON();
       res.status(200).send(kit.setResponseDataFormat()(result)());
     }).catch(err => {
@@ -71,18 +69,17 @@ exports.update = async (req, res) => {
           return res.status(400).send(kit.setResponseDataFormat("GOODS-BRAND-UPDATE-000001")()("缺少必要参数"));
         }
 
-        const { id, ...rest } = body;
+        const { id, brand_name, } = body;
         if(!id) {
           return res.status(400).send(kit.setResponseDataFormat("GOODS-BRAND-UPDATE-000002")()("id不能为空"));
         }
 
-        const { brand_name, } = body;
         const bol = await isExistFn({ brand_name, });
         if(bol) {
           return res.status(200).send(kit.setResponseDataFormat("GOODS-BRAND-UPDATE-000006")()("品牌名称已存在"));
         }
 
-        Model.update(rest, {
+        Model.update({ brand_name, }, {
           where: { id, },
           // 只保存这几个字段到数据库中
           fields: ['brand_name',],
