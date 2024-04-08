@@ -12,6 +12,7 @@ const pool = require('./pool');
 const config = require('./config');
 const kit = require('./kit');
 const app = express();
+const swaggerUi = require('swagger-ui-express');
 // 路由器标识
 const ROUTER_Flag = "APP";
 
@@ -95,11 +96,10 @@ app.use((req, res, next) => {
 // app.use('/api/admin/goods', require('./routes/admin/goods.js'));
 // app.use('/api/admin/user', require('./routes/admin/user.js'));
 // app.use('/api/admin/permission', require('./routes/admin/permission.js'));
-// app.use('/public/api/docs', require('./routes/swagger/index.js'));
-
 app.use('/api/user', require('./router/user.router.js')());
 app.use('/api/goods-brand', require('./router/goods-brand.router.js')());
 app.use('/api/goods', require('./router/goods.router.js')());
+app.use('/public/api/docs', swaggerUi.serve, swaggerUi.setup(require("./config/swagger-jsdoc.js")));
 
 // error handler
 app.use(function(err, req, res, next) {
