@@ -4,6 +4,9 @@ const model_name = "user";
 const Model = db[model_name];
 const Op = db.Sequelize.Op;
 
+/** 判断 - 字段是否已存在 */
+const isExistFn = kit.isExistFn(Model);
+
 /**
  * 注册用户
  * @param {*} req
@@ -20,12 +23,8 @@ exports.create = async (req, res) => {
         kit.batchDeleteObjKeyFn(body)(["id", "createdAt", "updatedAt"]);
 
         const { phone, } = body;
-        let isPhone = false;
-        if(phone) {
-          isPhone = await Model.findOne({ where: { phone, } });
-        }
-
-        if(isPhone) {
+        const bol = await isExistFn({ phone, });
+        if(bol) {
           return res.status(200).send(kit.setResponseDataFormat("USER-CREATE-000005")()("手机号已被注册"));
         }
       

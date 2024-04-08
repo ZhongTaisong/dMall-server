@@ -1,6 +1,5 @@
 const createError = require('http-errors');
 const express = require('express');
-const router = express.Router();
 const path = require('path');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
@@ -98,8 +97,9 @@ app.use((req, res, next) => {
 // app.use('/api/admin/permission', require('./routes/admin/permission.js'));
 // app.use('/public/api/docs', require('./routes/swagger/index.js'));
 
-app.use('/api/user', require('./router/user.router.js')(router));
-app.use('/api/goods', require('./router/goods.router.js')(router));
+app.use('/api/user', require('./router/user.router.js')());
+app.use('/api/goods-brand', require('./router/goods-brand.router.js')());
+app.use('/api/goods', require('./router/goods.router.js')());
 
 // error handler
 app.use(function(err, req, res, next) {

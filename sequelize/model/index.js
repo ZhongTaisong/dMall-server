@@ -17,6 +17,10 @@ const model_list = [
         model: require("./user.model.js"),
     },
     {
+        name: "goods_brand",
+        model: require("./goods-brand.model.js"),
+    },
+    {
         name: "goods",
         model: require("./goods.model.js"),
     },

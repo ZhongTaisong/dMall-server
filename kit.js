@@ -265,3 +265,20 @@ exports.getTokenFn = (user_info = {}, expiresIn = '3h') => {
         { expiresIn, },
     );
 }
+/**
+ * 字段是否已存在 - 操作
+ * @param {*} where 
+ * @returns 
+ */
+exports.isExistFn = (Model) => (where) => {
+    if(!Model || !Object.keys(Model).length) return Promise.resolve(null);
+    if(!where || !Object.keys(where).length) return Promise.resolve(null);
+
+    return new Promise(resolve => {
+        Model.findOne({ where, }).then(res => {
+            resolve(res);
+        }).catch(err => {
+            resolve(null);
+        })
+    });
+}
