@@ -20,15 +20,13 @@ exports.create = async (req, res) => {
           return res.status(400).send(kit.setResponseDataFormat("USER-CREATE-000001")()("缺少必要参数"));
         }
 
-        kit.batchDeleteObjKeyFn(body)(["id", "createdAt", "updatedAt"]);
-
-        const { phone, } = body;
+        const { phone, password, nickname, avatar, } = body;
         const bol = await isExistFn({ phone, });
         if(bol) {
           return res.status(200).send(kit.setResponseDataFormat("USER-CREATE-000005")()("手机号已被注册"));
         }
       
-        Model.create(body).then(data => {
+        Model.create({ phone, password, nickname, avatar, }).then(data => {
           const result = data.toJSON();
           kit.batchDeleteObjKeyFn(result)(["password",]);
           res.status(200).send(kit.setResponseDataFormat()(result)());
@@ -54,6 +52,10 @@ exports.login = async (req, res) => {
     }
 
     const { phone, password, } = body;
+    if(!phone || !password) {
+      return res.status(400).send(kit.setResponseDataFormat("USER-LOGIN-000005")()("缺少用户名或密码"));
+    }
+
     const pwd = kit.md5(`${ phone }${ password }`);
     const result = await Model.findOne({ 
       where: { phone, password: pwd, },
