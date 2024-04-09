@@ -12,6 +12,7 @@ module.exports = () => {
      * /api/user/public/register:
      *   post:
      *     summary: 注册
+     *     description: 注册
      *     tags:
      *      - 用户
      *     requestBody:
@@ -54,6 +55,7 @@ module.exports = () => {
      * /api/user/public/login:
      *   post:
      *     summary: 登录
+     *     description: 登录
      *     tags:
      *      - 用户
      *     requestBody:
@@ -88,6 +90,7 @@ module.exports = () => {
      * /api/user/public/delete/{id}:
      *   delete:
      *     summary: 删除指定用户
+     *     description: 删除指定用户
      *     tags:
      *      - 用户
      *     parameters:
@@ -113,6 +116,7 @@ module.exports = () => {
      * /api/user/public/update:
      *   put:
      *     summary: 更新指定用户
+     *     description: 更新指定用户
      *     tags:
      *      - 用户
      *     requestBody:
@@ -150,6 +154,7 @@ module.exports = () => {
      * /api/user/public/findAll:
      *   post:
      *     summary: 根据筛选条件查询用户
+     *     description: 根据筛选条件查询用户
      *     tags:
      *      - 用户
      *     requestBody:
