@@ -100,7 +100,7 @@ exports.update = async (req, res) => {
  */
 exports.findAll = (req, res) => {
   try {
-    const { brand_name, id, } = req.body || {};
+    let { brand_name, id, pageNum, pageSize, } = req.body || {};
     const params = {};
     if(id) {
       Object.assign(params, {
@@ -121,12 +121,49 @@ exports.findAll = (req, res) => {
       });
     }
 
-    Model.findAll({ 
+    const limit_params = {};
+    if(typeof pageNum !== 'undefined' || typeof pageSize !== 'undefined') {
+      // 跳过几个
+      pageNum = typeof pageNum === 'number' && pageNum >= 0 ? pageNum : 0;
+      // 每行限制几个
+      pageSize = typeof pageSize === 'number' && pageSize >= 0 ? pageSize : 10;
+
+      Object.assign(limit_params, {
+        offset: pageNum * pageSize,
+        limit: pageSize,
+      });
+    }
+
+    Model.findAndCountAll({ 
       where: params,
+      order: [
+        ['updatedAt', 'DESC'],
+      ],
+      ...limit_params,
     }).then(data => {
-      data = Array.isArray(data) ? data : [];
-      const result = data.map(item => item.toJSON());
-      res.status(200).send(kit.setResponseDataFormat()(result)());
+      const rows = Array.isArray(data?.rows) ? data?.rows : []
+      const result = rows.map(item => {
+        const item_js = item.toJSON();
+        if(!item_js || !Object.keys(item_js).length) return;
+
+        Object.assign(item_js, {
+          createdAt: kit.dateToStringFn(item_js['createdAt']),
+          updatedAt: kit.dateToStringFn(item_js['updatedAt']),
+        })
+        return item_js;
+      }).filter(Boolean);
+
+      const content = {
+        list: result,
+        total: data?.count ?? 0,
+      }
+      if(limit_params && Object.keys(limit_params).length) {
+        Object.assign(content, {
+          pageNum,
+          pageSize,
+        });
+      }
+      res.status(200).send(kit.setResponseDataFormat()(content)());
     }).catch(err => {
       res.status(500).send(kit.setResponseDataFormat("GOODS-BRAND-FINDALL-000002")()(err.message));
     });

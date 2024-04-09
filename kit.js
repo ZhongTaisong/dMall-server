@@ -6,6 +6,7 @@ const uuid = require('uuid');
 const multer = require('multer');
 const redisClient = require('./redis-client');
 const config = require('./config');
+const moment = require('moment');
 // 生成token
 const jwt = require('jsonwebtoken');
 
@@ -281,4 +282,16 @@ exports.isExistFn = (Model) => (where) => {
             resolve(null);
         })
     });
+}
+
+/**
+ * Date格式日期转字符串 - 操作
+ * @param {*} date 
+ * @param {*} format 
+ * @returns 
+ */
+exports.dateToStringFn = (date, format = 'YYYY-MM-DD HH:mm:ss') => {
+    if(!date || !format) return null;
+
+    return moment(date).format(format);
 }
