@@ -15,25 +15,48 @@ const isExistFn = kit.isExistFn(Model);
  */
 exports.create = async (req, res) => {
     try {
-        const body = req.body || {};
-        if(!body || !Object.keys(body).length) {
+        const { user_info, } = req.body || {};
+        const { filename, path, } = req.file || {};
+        
+        let userInfo = {};
+        if(typeof user_info === 'string' && user_info) {
+          try {
+            userInfo = JSON.parse(user_info);
+          } catch (error) {
+            userInfo = {};
+          }
+        }
+        console.log('111111111111111111', user_info, req.file);
+
+        if(filename) {
+          Object.assign(userInfo, {
+            avatar: filename,
+          });
+        }
+
+        if(!userInfo || !Object.keys(userInfo).length) {
+          kit.fsUnlinkFn(path);
           return res.status(400).send(kit.setResponseDataFormat("USER-CREATE-000001")()("缺少必要参数"));
         }
 
-        const { phone, password, nickname, avatar, } = body;
+        const { phone, password, nickname, avatar, } = userInfo;
         const bol = await isExistFn({ phone, });
         if(bol) {
-          return res.status(200).send(kit.setResponseDataFormat("USER-CREATE-000005")()("手机号已被注册"));
+          kit.fsUnlinkFn(path);
+          return res.status(200).send(kit.setResponseDataFormat("USER-CREATE-000005")()("手机号码已被注册"));
         }
       
         Model.create({ phone, password, nickname, avatar, }).then(data => {
           const result = data.toJSON();
           kit.batchDeleteObjKeyFn(result)(["password",]);
           res.status(200).send(kit.setResponseDataFormat()(result)());
+
         }).catch(err => {
+          kit.fsUnlinkFn(path);
           res.status(500).send(kit.setResponseDataFormat("USER-CREATE-000002")()(err.message));
         });
     } catch (error) {
+        kit.fsUnlinkFn(path);
         res.status(500).send(kit.setResponseDataFormat("USER-CREATE-000003")()(error.message));
     }
 };
@@ -135,7 +158,7 @@ exports.update = (req, res) => {
  */
 exports.findAll = (req, res) => {
   try {
-    const { phone, nickname, id, } = req.body || {};
+    let { phone, nickname, id, pageNum, pageSize, } = req.body || {};
     const params = {};
     if(id) {
       Object.assign(params, {
@@ -162,16 +185,50 @@ exports.findAll = (req, res) => {
       });
     }
 
-    Model.findAll({ 
+    const limit_params = {};
+    if(typeof pageNum !== 'undefined' || typeof pageSize !== 'undefined') {
+      // 跳过几个
+      pageNum = typeof pageNum === 'number' && pageNum >= 0 ? pageNum : 0;
+      // 每行限制几个
+      pageSize = typeof pageSize === 'number' && pageSize >= 0 ? pageSize : 10;
+
+      Object.assign(limit_params, {
+        offset: pageNum * pageSize,
+        limit: pageSize,
+      });
+    }
+
+    Model.findAndCountAll({ 
       where: params,
       attributes: { exclude: ['password'] },
+      order: [
+        ['updatedAt', 'DESC'],
+      ],
+      ...limit_params,
     }).then(data => {
-      data = Array.isArray(data) ? data : [];
-      const result = data.map(item => item.toJSON());
-      result.forEach(item => {
-        kit.batchDeleteObjKeyFn(item)(["password",]);
-      })
-      res.status(200).send(kit.setResponseDataFormat()(result)());
+      const rows = Array.isArray(data?.rows) ? data?.rows : []
+      const result = rows.map(item => {
+        const item_js = item.toJSON();
+        if(!item_js || !Object.keys(item_js).length) return;
+
+        Object.assign(item_js, {
+          createdAt: kit.dateToStringFn(item_js['createdAt']),
+          updatedAt: kit.dateToStringFn(item_js['updatedAt']),
+        })
+        return item_js;
+      }).filter(Boolean);
+
+      const content = {
+        list: result,
+        total: data?.count ?? 0,
+      }
+      if(limit_params && Object.keys(limit_params).length) {
+        Object.assign(content, {
+          pageNum,
+          pageSize,
+        });
+      }
+      res.status(200).send(kit.setResponseDataFormat()(content)());
     }).catch(err => {
       res.status(500).send(kit.setResponseDataFormat("USER-FINDALL-000002")()(err.message));
     });

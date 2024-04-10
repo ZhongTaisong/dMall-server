@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const controller = require("./../sequelize/controller/user.controller");
+const kit = require('./../kit');
 
 /**
  * 用户
@@ -26,7 +27,7 @@ module.exports = () => {
      *             properties:
      *               phone:
      *                 type: string
-     *                 description: 手机号
+     *                 description: 手机号码
      *                 example: 13100000000
      *               password:
      *                 type: string
@@ -48,7 +49,7 @@ module.exports = () => {
      *       500:
      *         description: 服务端出错了
      */
-    router.post('/public/register', controller.create);
+    router.post('/public/register', kit.upload().single('avatar'), controller.create);
 
     /**
      * @swagger
@@ -69,7 +70,7 @@ module.exports = () => {
      *             properties:
      *               phone:
      *                 type: string
-     *                 description: 手机号
+     *                 description: 手机号码
      *                 example: 13100000000
      *               password:
      *                 type: string
@@ -169,7 +170,7 @@ module.exports = () => {
      *                 example: 123
      *               phone:
      *                 type: string
-     *                 description: 手机号
+     *                 description: 手机号码
      *                 example: 13100000000
      *               nickname:
      *                 type: string

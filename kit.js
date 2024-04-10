@@ -213,14 +213,14 @@ exports.upload = (filenameKey) => {
                     "image/jpeg": 'jpg',
                 };
                 
-                cb(null, `${ filenameKey || key }.${ suffix[mimetype] || 'jpg' }`);
+                cb(null, `${ exports.md5(filenameKey || key) }.${ suffix[mimetype] || 'jpg' }`);
             }
         }), 
     });
 };
 
 /** 设置响应数据格式 */
-exports.setResponseDataFormat = (code = "DM000000") => (content = null) => (msg = null) => ({ code, content, msg, });
+exports.setResponseDataFormat = (code = config.SUCCESS_CODE) => (content = null) => (msg = null) => ({ code, content, msg, });
 
 /** 批量删除对象属性 - 操作 */
 exports.batchDeleteObjKeyFn = (obj) => (list) => {
@@ -294,4 +294,26 @@ exports.dateToStringFn = (date, format = 'YYYY-MM-DD HH:mm:ss') => {
     if(!date || !format) return null;
 
     return moment(date).format(format);
+}
+
+/**
+ * 删除文件 - 操作
+ * @param {*} path 
+ */
+exports.fsUnlinkFn = (path) => {
+    try {
+        if(!path) {
+            throw new Error("待删除文件路径path不能为空");
+        };
+    
+        fs.unlink(path, err => {
+            if(err) {
+                return console.log('文件删除失败', err);
+            }
+    
+            console.log('文件删除成功');
+        });
+    } catch (error) {
+        console.log('文件删除失败', error);
+    }
 }

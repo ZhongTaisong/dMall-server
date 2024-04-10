@@ -38,7 +38,7 @@ exports.REQUEST_URL = `http://127.0.0.1:${ PORT }/api`;
 /**
  * 接口请求成功code
  */
-exports.SUCCESS_CODE = "DM-000000";
+exports.SUCCESS_CODE = "DM000000";
 
 /**
  * 用户头像 - 图片存储路径
