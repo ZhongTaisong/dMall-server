@@ -303,7 +303,7 @@ exports.dateToStringFn = (date, format = 'YYYY-MM-DD HH:mm:ss') => {
 exports.fsUnlinkFn = (path) => {
     try {
         if(!path) {
-            throw new Error("待删除文件路径path不能为空");
+            return console.log('待删除文件路径path不能为空');
         };
     
         fs.unlink(path, err => {
@@ -316,4 +316,19 @@ exports.fsUnlinkFn = (path) => {
     } catch (error) {
         console.log('文件删除失败', error);
     }
+}
+
+/**
+ * 拼接完整图片url - 操作
+ * @param {*} pathType 
+ * @param {*} url 
+ * @returns 
+ */
+exports.joinFullImgUrlFn = (pathType, url) => {
+    if(!pathType || !url) return "";
+
+    const path = config[pathType];
+    if(!path) return "";
+
+    return `${ config.REQUEST_URL }${ path }/${ url }`;
 }

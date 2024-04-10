@@ -48,10 +48,18 @@ module.exports = (sequelize, DataTypes) => {
         nickname: {
             type: DataTypes.STRING,
             comment: '昵称',
+            set(value) {
+                const val = String(value || "");
+                this.setDataValue('nickname', val || null);
+            },
         },
         avatar: {
             type: DataTypes.STRING,
             comment: '用户头像',
+            set(value) {
+                const val = String(value || "");
+                this.setDataValue('avatar', val || null);
+            },
         },
     }, {
         /** 表名称与模型名称一致 */

@@ -36,11 +36,11 @@ module.exports = () => {
      *               nickname:
      *                 type: string
      *                 description: 昵称
-     *                 example: null
+     *                 example: ""
      *               avatar:
      *                 type: string
      *                 description: 用户头像
-     *                 example: null
+     *                 example: ""
      *     responses:
      *       200:
      *         description: 成功响应
@@ -49,7 +49,50 @@ module.exports = () => {
      *       500:
      *         description: 服务端出错了
      */
-    router.post('/public/register', kit.upload().single('avatar'), controller.create);
+    router.post('/public/register', controller.create);
+
+    /**
+     * @swagger
+     * /api/user/public/formData/register:
+     *   post:
+     *     summary: 注册 - FormDta
+     *     description: 注册 - FormDta
+     *     tags:
+     *      - 用户
+     *     requestBody:
+     *       content:
+     *         multipart/form-data:
+     *           schema:
+     *             required:
+     *               - phone
+     *               - password
+     *             type: object
+     *             properties:
+     *               phone:
+     *                 type: string
+     *                 description: 手机号码
+     *                 example: 13100000000
+     *               password:
+     *                 type: string
+     *                 description: 用户密码
+     *                 example: 123456
+     *               nickname:
+     *                 type: string
+     *                 description: 昵称
+     *                 example: ""
+     *               avatar:
+     *                 type: string
+     *                 description: 用户头像
+     *                 format: binary
+     *     responses:
+     *       200:
+     *         description: 成功响应
+     *       400:
+     *         description: 缺少必要参数
+     *       500:
+     *         description: 服务端出错了
+     */
+    router.post('/public/formData/register', kit.upload().single('avatar'), controller.formData_create);
 
     /**
      * @swagger
@@ -149,6 +192,44 @@ module.exports = () => {
      *         description: 服务端出错了
      */
     router.put('/public/update', controller.update);
+
+    /**
+     * @swagger
+     * /api/user/public/update:
+     *   put:
+     *     summary: 更新指定用户 - FormDta
+     *     description: 更新指定用户 - FormDta
+     *     tags:
+     *      - 用户
+     *     requestBody:
+     *       content:
+     *         multipart/form-data:
+     *           schema:
+     *             required:
+     *               - id
+     *             type: object
+     *             properties:
+     *               id:
+     *                 type: string
+     *                 description: 主键id
+     *                 example: 123
+     *               nickname:
+     *                 type: string
+     *                 description: 昵称
+     *                 example: ""
+     *               avatar:
+     *                 type: string
+     *                 description: 用户头像
+     *                 format: binary
+     *     responses:
+     *       200:
+     *         description: 成功响应
+     *       400:
+     *         description: 缺少必要参数
+     *       500:
+     *         description: 服务端出错了
+     */
+    router.put('/public/formData/update', kit.upload().single('avatar'), controller.formData_update);
 
     /**
      * @swagger

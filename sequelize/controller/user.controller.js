@@ -14,51 +14,71 @@ const isExistFn = kit.isExistFn(Model);
  * @returns 
  */
 exports.create = async (req, res) => {
-    try {
-        const { user_info, } = req.body || {};
-        const { filename, path, } = req.file || {};
-        
-        let userInfo = {};
-        if(typeof user_info === 'string' && user_info) {
-          try {
-            userInfo = JSON.parse(user_info);
-          } catch (error) {
-            userInfo = {};
-          }
-        }
-        console.log('111111111111111111', user_info, req.file);
+  try {
+      const body = req.body || {};
+      if(!body || !Object.keys(body).length) {
+        return res.status(400).send(kit.setResponseDataFormat("USER-CREATE-000001")()("缺少必要参数"));
+      }
 
-        if(filename) {
-          Object.assign(userInfo, {
-            avatar: filename,
-          });
-        }
+      const { phone, password, nickname, avatar, } = body;
+      const bol = await isExistFn({ phone, });
+      if(bol) {
+        return res.status(200).send(kit.setResponseDataFormat("USER-CREATE-000005")()("手机号已被注册"));
+      }
+    
+      Model.create({ phone, password, nickname, avatar, }).then(data => {
+        const result = data.toJSON();
+        kit.batchDeleteObjKeyFn(result)(["password",]);
+        res.status(200).send(kit.setResponseDataFormat()(result)());
+      }).catch(err => {
+        res.status(500).send(kit.setResponseDataFormat("USER-CREATE-000002")()(err.message));
+      });
+  } catch (error) {
+      res.status(500).send(kit.setResponseDataFormat("USER-CREATE-000003")()(error.message));
+  }
+};
 
-        if(!userInfo || !Object.keys(userInfo).length) {
-          kit.fsUnlinkFn(path);
-          return res.status(400).send(kit.setResponseDataFormat("USER-CREATE-000001")()("缺少必要参数"));
-        }
-
-        const { phone, password, nickname, avatar, } = userInfo;
-        const bol = await isExistFn({ phone, });
-        if(bol) {
-          kit.fsUnlinkFn(path);
-          return res.status(200).send(kit.setResponseDataFormat("USER-CREATE-000005")()("手机号码已被注册"));
-        }
-      
-        Model.create({ phone, password, nickname, avatar, }).then(data => {
-          const result = data.toJSON();
-          kit.batchDeleteObjKeyFn(result)(["password",]);
-          res.status(200).send(kit.setResponseDataFormat()(result)());
-
-        }).catch(err => {
-          kit.fsUnlinkFn(path);
-          res.status(500).send(kit.setResponseDataFormat("USER-CREATE-000002")()(err.message));
-        });
-    } catch (error) {
-        kit.fsUnlinkFn(path);
-        res.status(500).send(kit.setResponseDataFormat("USER-CREATE-000003")()(error.message));
+/**
+ * 注册用户 - FormDta
+ * @param {*} req
+ * @param {*} res
+ * @returns 
+ */
+exports.formData_create = async (req, res) => {
+  const { filename, path, } = req.file || {};
+  try {
+    const body = req.body || {};
+    if(!body || !Object.keys(body).length) {
+      kit.fsUnlinkFn(path);
+      return res.status(400).send(kit.setResponseDataFormat("USER-FORMDATA_CREATE-000003")()("缺少必要参数"));
     }
+
+    if(filename) {
+      Object.assign(body, {
+        avatar: filename,
+      });
+    }
+
+    const { phone, password, nickname, avatar, } = body;
+    const bol = await isExistFn({ phone, });
+    if(bol) {
+      kit.fsUnlinkFn(path);
+      return res.status(200).send(kit.setResponseDataFormat("USER-FORMDATA_CREATE-000005")()("手机号码已被注册"));
+    }
+  
+    Model.create({ phone, password, nickname, avatar, }).then(data => {
+      const result = data.toJSON();
+      kit.batchDeleteObjKeyFn(result)(["password",]);
+      res.status(200).send(kit.setResponseDataFormat()(result)());
+
+    }).catch(err => {
+      kit.fsUnlinkFn(path);
+      res.status(500).send(kit.setResponseDataFormat("USER-FORMDATA_CREATE-000002")()(err.message));
+    });
+  } catch (error) {
+    kit.fsUnlinkFn(path);
+    res.status(500).send(kit.setResponseDataFormat("USER-FORMDATA_CREATE-000001")()(error.message));
+  }
 };
 
 /**
@@ -152,6 +172,48 @@ exports.update = (req, res) => {
 };
 
 /**
+ * 更新指定用户 - FormDta
+ * @param {*} req 
+ * @param {*} res 
+ */
+exports.formData_update = (req, res) => {
+  const { filename, path, } = req.file || {};
+  try {
+    const body = req.body || {};
+    if(!body || !Object.keys(body).length) {
+      kit.fsUnlinkFn(path);
+      return res.status(400).send(kit.setResponseDataFormat("USER-FORMDATA_UPDATE-000003")()("缺少必要参数"));
+    }
+
+    if(filename) {
+      Object.assign(body, {
+        avatar: filename,
+      });
+    }
+
+    const { id, nickname, avatar, } = body;
+    if(!id) {
+      kit.fsUnlinkFn(path);
+      return res.status(400).send(kit.setResponseDataFormat("USER-FORMDATA_UPDATE-000005")()("id不能为空"));
+    }
+
+    Model.update({ nickname, avatar, }, {
+      where: { id, },
+      // 只保存这几个字段到数据库中
+      fields: ['nickname', 'avatar'],
+    }).then(() => {
+      res.status(200).send(kit.setResponseDataFormat()()("更新成功"));
+    }).catch(err => {
+      kit.fsUnlinkFn(path);
+      res.status(500).send(kit.setResponseDataFormat("USER-FORMDATA_UPDATE-000002")()(err.message));
+    });
+  } catch (error) {
+    kit.fsUnlinkFn(path);
+    res.status(500).send(kit.setResponseDataFormat("USER-FORMDATA_UPDATE-000001")()(error.message));
+  }
+};
+
+/**
  * 根据筛选条件查询用户
  * @param {*} req 
  * @param {*} res 
@@ -214,6 +276,7 @@ exports.findAll = (req, res) => {
         Object.assign(item_js, {
           createdAt: kit.dateToStringFn(item_js['createdAt']),
           updatedAt: kit.dateToStringFn(item_js['updatedAt']),
+          avatar: kit.joinFullImgUrlFn("AVATAR_PATH", item_js['avatar']),
         })
         return item_js;
       }).filter(Boolean);
