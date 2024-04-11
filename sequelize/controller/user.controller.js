@@ -7,6 +7,8 @@ const Op = db.Sequelize.Op;
 
 /** 判断 - 字段是否已存在 */
 const isExistFn = kit.isExistFn(Model);
+/** 用户头像 - 图片存储路径 */
+const avatar_path = config.AVATAR_PATH;
 
 /**
  * 注册用户
@@ -126,18 +128,30 @@ exports.login = async (req, res) => {
  * @param {*} req 
  * @param {*} res 
  */
-exports.delete = (req, res) => {
+exports.delete = async (req, res) => {
     try {
         const params = req.params || {};
+        if(!params || !Object.keys(params).length) {
+          return res.status(400).send(kit.setResponseDataFormat("USER-DELETE-000003")()("缺少必要参数"));
+        }
+
+        const { id, } = params;
+        const info = await Model.findByPk(id);
+        const { avatar, } = info?.toJSON?.() || {};
+        if(avatar) {
+          const path = `${ process.cwd() }${ avatar_path }/${ avatar }`;
+          kit.fsUnlinkFn(path);
+        }
+
         Model.destroy({
           where: params,
         }).then(() => {
             res.status(200).send(kit.setResponseDataFormat()()("删除成功"));
         }).catch(err => {
-            res.status(500).send(kit.setResponseDataFormat("USER-DELETE-000001")()(err.message));
+            res.status(500).send(kit.setResponseDataFormat("USER-DELETE-000002")()(err.message));
         });
     } catch (error) {
-        res.status(500).send(kit.setResponseDataFormat("USER-DELETE-000002")()(error.message));
+        res.status(500).send(kit.setResponseDataFormat("USER-DELETE-000001")()(error.message));
     }
 };
 
@@ -187,7 +201,6 @@ exports.formData_update = async (req, res) => {
     }
 
     const body_avatar = String(body?.avatar || "");
-    const avatar_path = config.AVATAR_PATH;
     if(body_avatar && body_avatar.includes(config.AVATAR_PATH) && !filename) {
       filename = body_avatar?.split?.(`${ avatar_path }/`)?.[1] || "";
     }
