@@ -1,5 +1,6 @@
 const db = require("./../model/index");
 const kit = require('./../../kit');
+const config = require('./../../config');
 const model_name = "user";
 const Model = db[model_name];
 const Op = db.Sequelize.Op;
@@ -176,8 +177,8 @@ exports.update = (req, res) => {
  * @param {*} req 
  * @param {*} res 
  */
-exports.formData_update = (req, res) => {
-  const { filename, path, } = req.file || {};
+exports.formData_update = async (req, res) => {
+  let { filename, path, } = req.file || {};
   try {
     const body = req.body || {};
     if(!body || !Object.keys(body).length) {
@@ -185,11 +186,15 @@ exports.formData_update = (req, res) => {
       return res.status(400).send(kit.setResponseDataFormat("USER-FORMDATA_UPDATE-000003")()("缺少必要参数"));
     }
 
-    if(filename) {
-      Object.assign(body, {
-        avatar: filename,
-      });
+    const body_avatar = String(body?.avatar || "");
+    const avatar_path = config.AVATAR_PATH;
+    if(body_avatar && body_avatar.includes(config.AVATAR_PATH) && !filename) {
+      filename = body_avatar?.split?.(`${ avatar_path }/`)?.[1] || "";
     }
+
+    Object.assign(body, {
+      avatar: filename || "",
+    });
 
     const { id, nickname, avatar, } = body;
     if(!id) {
@@ -197,11 +202,20 @@ exports.formData_update = (req, res) => {
       return res.status(400).send(kit.setResponseDataFormat("USER-FORMDATA_UPDATE-000005")()("id不能为空"));
     }
 
+    const info = await Model.findByPk(id);
+    const { avatar: avatar_prev, } = info?.toJSON?.() || {};
+
     Model.update({ nickname, avatar, }, {
       where: { id, },
       // 只保存这几个字段到数据库中
       fields: ['nickname', 'avatar'],
     }).then(() => {
+      const avatar_new = avatar;
+      if(avatar_new !== avatar_prev && avatar_prev) {
+        path = `${ process.cwd() }${ avatar_path }/${ avatar_prev }`;
+        kit.fsUnlinkFn(path);
+      }
+
       res.status(200).send(kit.setResponseDataFormat()()("更新成功"));
     }).catch(err => {
       kit.fsUnlinkFn(path);
