@@ -193,6 +193,7 @@ exports.upload = (filenameKey) => {
                     goods_picture: config.GOODS_MAIN_PATH,
                     detail_picture: config.GOODS_DETAIL_PATH,
                     banner_picture: config.BANNER_PATH,
+                    goods_imgs: config.GOODS_PATH,
                 }[fieldname];
                 if(!pathname) return;
 
@@ -331,4 +332,43 @@ exports.joinFullImgUrlFn = (pathType, url) => {
     if(!path) return "";
 
     return `${ config.REQUEST_URL }${ path }/${ url }`;
+}
+
+/**
+ * 删除文件 - 批量操作
+ * @param {*} paths 
+ * @returns 
+ */
+exports.batchFsUnlinkFn = (paths) => {
+    try {
+        if(!Array.isArray(paths) || !paths.length) {
+            return console.log('待批量删除文件路径集合不能为空');
+        };
+    
+        paths.forEach(item => {
+            const path = String(item || "");
+            if(path) {
+                exports.fsUnlinkFn(path);
+            }
+        });
+    } catch (error) {
+        console.log('文件批量删除失败', error);
+    }
+}
+
+/**
+ * 拼接完整图片url - 批量操作
+ * @param {*} pathType 
+ * @param {*} urls 
+ * @returns 
+ */
+exports.batchJoinFullImgUrlFn = (pathType, urls) => {
+    if(!Array.isArray(urls) || !urls.length) {
+        return console.log('待批量删除文件路径集合不能为空');
+    };
+
+    return urls.map(item => {
+        const url = String(item || "");
+        return exports.joinFullImgUrlFn(pathType, url);
+    }).filter(Boolean);
 }

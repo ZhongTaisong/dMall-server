@@ -46,6 +46,11 @@ exports.SUCCESS_CODE = "DM000000";
 exports.AVATAR_PATH = "/public/assets/images/avatar";
 
 /**
+ * 商品 - 图片存储路径
+ */
+exports.GOODS_PATH = "/public/assets/images/goods";
+
+/**
  * banner - 图片存储路径
  */
 exports.BANNER_PATH = "/public/assets/images/goods/banner";
