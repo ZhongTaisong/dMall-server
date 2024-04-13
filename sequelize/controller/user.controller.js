@@ -42,7 +42,7 @@ exports.create = async (req, res) => {
 };
 
 /**
- * 注册用户 - FormDta
+ * 注册用户 - FormData
  * @param {*} req
  * @param {*} res
  * @returns 
@@ -187,7 +187,7 @@ exports.update = (req, res) => {
 };
 
 /**
- * 更新指定用户 - FormDta
+ * 更新指定用户 - FormData
  * @param {*} req 
  * @param {*} res 
  */

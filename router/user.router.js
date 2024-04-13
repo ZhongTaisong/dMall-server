@@ -55,8 +55,8 @@ module.exports = () => {
      * @swagger
      * /api/user/public/formData/register:
      *   post:
-     *     summary: 注册 - FormDta
-     *     description: 注册 - FormDta
+     *     summary: 注册 - FormData
+     *     description: 注册 - FormData
      *     tags:
      *      - 用户
      *     requestBody:
@@ -197,8 +197,8 @@ module.exports = () => {
      * @swagger
      * /api/user/public/update:
      *   put:
-     *     summary: 更新指定用户 - FormDta
-     *     description: 更新指定用户 - FormDta
+     *     summary: 更新指定用户 - FormData
+     *     description: 更新指定用户 - FormData
      *     tags:
      *      - 用户
      *     requestBody:

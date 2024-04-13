@@ -9,7 +9,7 @@ const Op = db.Sequelize.Op;
 const isExistFn = kit.isExistFn(Model);
 
 /**
- * 新增商品 - FormDta
+ * 新增商品 - FormData
  * @param {*} req
  * @param {*} res
  * @returns 
@@ -74,7 +74,7 @@ exports.delete = (req, res) => {
 };
 
 /**
- * 更新指定商品 - FormDta
+ * 更新指定商品 - FormData
  * @param {*} req 
  * @param {*} res 
  */

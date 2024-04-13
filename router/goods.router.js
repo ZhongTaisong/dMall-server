@@ -12,8 +12,8 @@ module.exports = () => {
      * @swagger
      * /api/goods/public/formData/add:
      *   post:
-     *     summary: 新增商品 - FormDta
-     *     description: 新增商品 - FormDta
+     *     summary: 新增商品 - FormData
+     *     description: 新增商品 - FormData
      *     tags:
      *      - 商品
      *     requestBody:
@@ -87,8 +87,8 @@ module.exports = () => {
      * @swagger
      * /api/goods/public/update:
      *   put:
-     *     summary: 更新指定商品 - FormDta
-     *     description: 更新指定商品 - FormDta
+     *     summary: 更新指定商品 - FormData
+     *     description: 更新指定商品 - FormData
      *     tags:
      *      - 商品
      *     requestBody:
