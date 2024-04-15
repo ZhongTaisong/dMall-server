@@ -92,7 +92,7 @@ module.exports = () => {
      *       500:
      *         description: 服务端出错了
      */
-    router.post('/public/formData/register', kit.upload().single('avatar'), controller.formData_create);
+    router.post('/public/formData/register', kit.uploadImgFn().single('avatar'), controller.formData_create);
 
     /**
      * @swagger
@@ -229,7 +229,7 @@ module.exports = () => {
      *       500:
      *         description: 服务端出错了
      */
-    router.put('/public/formData/update', kit.upload().single('avatar'), controller.formData_update);
+    router.put('/public/formData/update', kit.uploadImgFn().single('avatar'), controller.formData_update);
 
     /**
      * @swagger

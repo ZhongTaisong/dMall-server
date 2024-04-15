@@ -7,6 +7,8 @@ const Op = db.Sequelize.Op;
 
 /** 判断 - 字段是否已存在 */
 const isExistFn = kit.isExistFn(Model);
+/** 商品图片存储路径 */
+const goods_path = config.GOODS_PATH;
 
 /**
  * 新增商品 - FormData
@@ -79,51 +81,56 @@ exports.delete = (req, res) => {
  * @param {*} res 
  */
 exports.formData_update = async (req, res) => {
-  let { filename, path, } = req.file || {};
+  const files = req?.files || [];
+  const paths = files?.map?.(item => item?.path)?.filter?.(Boolean) || [];
+  const filenames = files?.map?.(item => item?.filename)?.filter?.(Boolean) || [];
+
   try {
     const body = req.body || {};
     if(!body || !Object.keys(body).length) {
-      kit.fsUnlinkFn(path);
+      kit.batchFsUnlinkFn(paths);
       return res.status(400).send(kit.setResponseDataFormat("GOODS-FORMDATA_UPDATE-000003")()("缺少必要参数"));
     }
 
-    const body_avatar = String(body?.avatar || "");
-    const avatar_path = config.AVATAR_PATH;
-    if(body_avatar && body_avatar.includes(config.AVATAR_PATH) && !filename) {
-      filename = body_avatar?.split?.(`${ avatar_path }/`)?.[1] || "";
+    if(Array.isArray(filenames) && filenames.length) {
+      Object.assign(body, {
+        goods_img: filenames.join("|"),
+      });
     }
 
-    Object.assign(body, {
-      avatar: filename || "",
-    });
-
-    const { id, nickname, avatar, } = body;
+    const { id, goods_name, goods_description, goods_price, goods_detail, goods_img, } = body;
     if(!id) {
       kit.fsUnlinkFn(path);
       return res.status(400).send(kit.setResponseDataFormat("GOODS-FORMDATA_UPDATE-000005")()("id不能为空"));
     }
 
     const info = await Model.findByPk(id);
-    const { avatar: avatar_prev, } = info?.toJSON?.() || {};
+    const { goods_img: goods_img_prev, goods_name: goods_name_prev, } = info?.toJSON?.() || {};
+    
+    if(goods_name && goods_name_prev && goods_name === goods_name_prev) {
+      kit.batchFsUnlinkFn(paths);
+      return res.status(200).send(kit.setResponseDataFormat("GOODS-FORMDATA_UPDATE-000006")()("商品名称已被使用"));
+    }
 
-    Model.update({ nickname, avatar, }, {
+    Model.update({ goods_name, goods_description, goods_price, goods_detail, goods_img, }, {
       where: { id, },
-      // 只保存这几个字段到数据库中
-      fields: ['nickname', 'avatar'],
     }).then(() => {
-      const avatar_new = avatar;
-      if(avatar_new !== avatar_prev && avatar_prev) {
-        path = `${ process.cwd() }${ avatar_path }/${ avatar_prev }`;
-        kit.fsUnlinkFn(path);
+      const goods_img_new = goods_img;
+      if(goods_img_new !== goods_img_prev && goods_img_prev) {
+        const list = goods_img_prev?.split?.("|") || [];
+        if(Array.isArray(list)) {
+          paths = list.map(item => !goods_img_new?.includes?.(item)).filter(Boolean).map(item => `${ process.cwd() }${ goods_path }/${ item }`);
+          kit.batchFsUnlinkFn(paths);
+        }
       }
 
       res.status(200).send(kit.setResponseDataFormat()()("更新成功"));
     }).catch(err => {
-      kit.fsUnlinkFn(path);
+      kit.batchFsUnlinkFn(paths);
       res.status(500).send(kit.setResponseDataFormat("GOODS-FORMDATA_UPDATE-000002")()(err.message));
     });
   } catch (error) {
-    kit.fsUnlinkFn(path);
+    kit.batchFsUnlinkFn(paths);
     res.status(500).send(kit.setResponseDataFormat("GOODS-FORMDATA_UPDATE-000001")()(error.message));
   }
 };

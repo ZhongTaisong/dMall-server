@@ -178,23 +178,52 @@ exports.validatePhone = (value) => {
 exports.getInitPassword = () => Math.random().toString().slice(2, 8);
 
 /**
- * 上传图片 - 配置项
+ * 上传文件 - 配置项
+ * @param {*} params 
+ * @returns 
  */
-exports.upload = (filenameKey) => {
+exports.upload = (params) => {
+    if(!params || !Object.keys(params).length) return;
+
+    const path_map = {
+        avatar: config.AVATAR_PATH,
+        main_picture: config.GOODS_MAIN_PATH,
+        goods_picture: config.GOODS_MAIN_PATH,
+        detail_picture: config.GOODS_DETAIL_PATH,
+        banner_picture: config.BANNER_PATH,
+        goods_imgs: config.GOODS_PATH,
+    };
+
+    let { fileName, fileFormat, } = params;
+    fileName = fileName || `${ Date.now() }${ Math.round(Math.random() * 1E9) }`;
+
+    if(!Array.isArray(fileFormat) || !fileFormat.length) {
+        fileFormat = [];
+    }
+    
     return multer({ 
+        limits: {
+            // 2MB
+            fieldSize: 2097152,
+        },
+        fileFilter(req, file, cb) {
+            if(!file || !Object.keys(file).length) return;
+
+            const { mimetype, } = file;
+            if(!fileFormat.length) {
+                cb(null, true);
+
+            }else {
+                const bol = fileFormat.includes(mimetype);
+                cb(null, bol);
+            }
+        },
         storage: multer.diskStorage({
             destination: function(req, file, cb) {
                 if(!file || !Object.keys(file).length) return;
 
                 const { fieldname, } = file;
-                const pathname = {
-                    avatar: config.AVATAR_PATH,
-                    main_picture: config.GOODS_MAIN_PATH,
-                    goods_picture: config.GOODS_MAIN_PATH,
-                    detail_picture: config.GOODS_DETAIL_PATH,
-                    banner_picture: config.BANNER_PATH,
-                    goods_imgs: config.GOODS_PATH,
-                }[fieldname];
+                const pathname = path_map[fieldname];
                 if(!pathname) return;
 
                 const _pathname = path.join(__dirname, ".", pathname);
@@ -208,13 +237,8 @@ exports.upload = (filenameKey) => {
                 if(!file || !Object.keys(file).length) return;
 
                 const { mimetype, } = file;
-                const key = Date.now() + '_' + Math.round(Math.random() * 1E9);
-                const suffix = {
-                    "image/png": 'png',
-                    "image/jpeg": 'jpg',
-                };
-                
-                cb(null, `${ exports.md5(filenameKey || key) }.${ suffix[mimetype] || 'jpg' }`);
+                const suffix = mimetype.split("/")[1];
+                cb(null, `${ exports.md5(fileName) }.${ suffix || 'jpg' }`);
             }
         }), 
     });
@@ -372,3 +396,13 @@ exports.batchJoinFullImgUrlFn = (pathType, urls) => {
         return exports.joinFullImgUrlFn(pathType, url);
     }).filter(Boolean);
 }
+
+/**
+ * 上传图片 - 配置项
+ */
+exports.uploadImgFn = (params) => {
+    return exports.upload({
+        fileFormat: ["image/png", "image/jpeg"],
+        ...params,
+    });
+};

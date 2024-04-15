@@ -22,6 +22,7 @@ module.exports = () => {
      *           schema:
      *             required:
      *               - goods_name
+     *               - goods_price
      *             type: object
      *             properties:
      *               goods_name:
@@ -39,7 +40,7 @@ module.exports = () => {
      *                 example: 88.88
      *               goods_imgs:
      *                 type: array
-     *                 description: 商品头像
+     *                 description: 商品图片
      *                 items: 
      *                   type: string
      *                   format: binary
@@ -55,7 +56,7 @@ module.exports = () => {
      *       500:
      *         description: 服务端出错了
      */
-    router.post('/public/formData/add', kit.upload().array('goods_imgs', 3), controller.formData_create);
+    router.post('/public/formData/add', kit.uploadImgFn().array('goods_imgs', 6), controller.formData_create);
 
     /**
      * @swagger
@@ -85,7 +86,7 @@ module.exports = () => {
 
     /**
      * @swagger
-     * /api/goods/public/update:
+     * /api/goods/public/formData/update:
      *   put:
      *     summary: 更新指定商品 - FormData
      *     description: 更新指定商品 - FormData
@@ -97,20 +98,37 @@ module.exports = () => {
      *           schema:
      *             required:
      *               - id
+     *               - goods_name
+     *               - goods_price
      *             type: object
      *             properties:
      *               id:
      *                 type: string
      *                 description: 主键id
      *                 example: 123
-     *               nickname:
+     *               goods_name:
      *                 type: string
-     *                 description: 昵称
+     *                 description: 商品名称
+     *                 example: 商品666
+     *               goods_description:
+     *                 type: string
+     *                 description: 商品描述
      *                 example: ""
-     *               avatar:
+     *               goods_price:
+     *                 type: number
+     *                 format: decimal
+     *                 description: 商品价格
+     *                 example: 88.88
+     *               goods_imgs:
+     *                 type: array
+     *                 description: 商品图片
+     *                 items: 
+     *                   type: string
+     *                   format: binary
+     *               goods_detail:
      *                 type: string
-     *                 description: 商品头像
-     *                 format: binary
+     *                 description: 商品详情
+     *                 example: ""
      *     responses:
      *       200:
      *         description: 成功响应
@@ -119,7 +137,7 @@ module.exports = () => {
      *       500:
      *         description: 服务端出错了
      */
-    router.put('/public/formData/update', kit.upload().single('avatar'), controller.formData_update);
+    router.put('/public/formData/update', kit.uploadImgFn().array('goods_imgs', 6), controller.formData_update);
 
     /**
      * @swagger

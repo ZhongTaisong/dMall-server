@@ -13,6 +13,7 @@ const config = require('./config');
 const kit = require('./kit');
 const app = express();
 const swaggerUi = require('swagger-ui-express');
+const multer = require('multer');
 // 路由器标识
 const ROUTER_Flag = "APP";
 
@@ -104,10 +105,11 @@ app.use('/public/api/docs', swaggerUi.serve, swaggerUi.setup(require("./config/s
 // error handler
 app.use(function(err, req, res, next) {
   if(err.status === 401) {
-    return res.status(401).send({
-      code: `DM-${ ROUTER_Flag }-000001`,
-      msg: '身份认证失败!',
-    });
+    return res.status(401).send(kit.setResponseDataFormat("APP-ERR-000001")()("身份认证失败"));
+  }
+
+  if(err instanceof multer.MulterError) {
+    return res.status(404).send(kit.setResponseDataFormat("APP-ERR-000002")()("上传操作异常"));
   }
   
   // set locals, only providing error in development
