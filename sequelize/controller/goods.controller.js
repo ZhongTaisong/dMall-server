@@ -82,8 +82,8 @@ exports.delete = (req, res) => {
  */
 exports.formData_update = async (req, res) => {
   const files = req?.files || [];
-  const paths = files?.map?.(item => item?.path)?.filter?.(Boolean) || [];
-  const filenames = files?.map?.(item => item?.filename)?.filter?.(Boolean) || [];
+  let paths = files?.map?.(item => item?.path)?.filter?.(Boolean) || [];
+  let filenames = files?.map?.(item => item?.filename)?.filter?.(Boolean) || [];
 
   try {
     const body = req.body || {};
@@ -92,7 +92,15 @@ exports.formData_update = async (req, res) => {
       return res.status(400).send(kit.setResponseDataFormat("GOODS-FORMDATA_UPDATE-000003")()("缺少必要参数"));
     }
 
-    if(Array.isArray(filenames) && filenames.length) {
+    let goods_imgs = body?.goods_imgs || [];
+    if(goods_imgs && !Array.isArray(goods_imgs)) {
+      goods_imgs = [goods_imgs];
+    }
+    if(Array.isArray(goods_imgs) && goods_imgs.length && !filenames?.length) {
+      filenames = goods_imgs.map(item => item?.split?.(`${ goods_path }/`)?.[1]).filter(Boolean);
+    }
+
+    if(Array.isArray(filenames)) {
       Object.assign(body, {
         goods_img: filenames.join("|"),
       });
@@ -104,12 +112,13 @@ exports.formData_update = async (req, res) => {
       return res.status(400).send(kit.setResponseDataFormat("GOODS-FORMDATA_UPDATE-000005")()("id不能为空"));
     }
 
-    const info = await Model.findByPk(id);
-    const { goods_img: goods_img_prev, goods_name: goods_name_prev, } = info?.toJSON?.() || {};
-    
-    if(goods_name && goods_name_prev && goods_name === goods_name_prev) {
-      kit.batchFsUnlinkFn(paths);
-      return res.status(200).send(kit.setResponseDataFormat("GOODS-FORMDATA_UPDATE-000006")()("商品名称已被使用"));
+    const info = await isExistFn({ goods_name, });
+    const { goods_img: goods_img_prev, goods_name: goods_name_prev, id: id_prev, } = info?.toJSON?.() || {};
+    if(id && id_prev && id != id_prev) {
+      if(goods_name && goods_name_prev && goods_name === goods_name_prev) {
+        kit.batchFsUnlinkFn(paths);
+        return res.status(200).send(kit.setResponseDataFormat("GOODS-FORMDATA_UPDATE-000006")()("商品名称已被使用"));
+      }
     }
 
     Model.update({ goods_name, goods_description, goods_price, goods_detail, goods_img, }, {
@@ -119,7 +128,7 @@ exports.formData_update = async (req, res) => {
       if(goods_img_new !== goods_img_prev && goods_img_prev) {
         const list = goods_img_prev?.split?.("|") || [];
         if(Array.isArray(list)) {
-          paths = list.map(item => !goods_img_new?.includes?.(item)).filter(Boolean).map(item => `${ process.cwd() }${ goods_path }/${ item }`);
+          paths = list.filter(item => !goods_img_new?.includes?.(item)).map(item => `${ process.cwd() }${ goods_path }/${ item }`);
           kit.batchFsUnlinkFn(paths);
         }
       }
