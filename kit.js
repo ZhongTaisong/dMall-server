@@ -195,8 +195,6 @@ exports.upload = (params) => {
     };
 
     let { fileName, fileFormat, } = params;
-    fileName = fileName || `${ Date.now() }${ Math.round(Math.random() * 1E9) }`;
-
     if(!Array.isArray(fileFormat) || !fileFormat.length) {
         fileFormat = [];
     }
@@ -236,9 +234,10 @@ exports.upload = (params) => {
             filename: function(req, file, cb) {
                 if(!file || !Object.keys(file).length) return;
 
+                const file_name = fileName || `${ Date.now() }${ Math.round(Math.random() * 1E9) }`;
                 const { mimetype, } = file;
                 const suffix = mimetype.split("/")[1];
-                cb(null, `${ exports.md5(fileName) }.${ suffix || 'jpg' }`);
+                cb(null, `${ exports.md5(file_name) }.${ suffix || 'jpg' }`);
             }
         }), 
     });
