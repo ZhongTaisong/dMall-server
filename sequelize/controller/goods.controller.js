@@ -92,12 +92,15 @@ exports.formData_update = async (req, res) => {
       return res.status(400).send(kit.setResponseDataFormat("GOODS-FORMDATA_UPDATE-000003")()("缺少必要参数"));
     }
 
-    let goods_imgs = body?.goods_imgs || [];
-    if(goods_imgs && !Array.isArray(goods_imgs)) {
-      goods_imgs = [goods_imgs];
+    const goods_imgs = body?.goods_imgs || [];
+    if(goods_imgs && typeof goods_imgs === 'string' && !Array.isArray(goods_imgs)) {
+      filenames.push(goods_imgs?.split?.(`${ goods_path }/`)?.[1] || "");
     }
-    if(Array.isArray(goods_imgs) && goods_imgs.length && !filenames?.length) {
-      filenames = goods_imgs.map(item => item?.split?.(`${ goods_path }/`)?.[1]).filter(Boolean);
+
+    if(Array.isArray(goods_imgs)) {
+      goods_imgs.forEach(item => {
+        filenames.push(item?.split?.(`${ goods_path }/`)?.[1] || "");
+      })
     }
 
     if(Array.isArray(filenames)) {
