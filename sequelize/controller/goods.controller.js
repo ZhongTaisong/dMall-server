@@ -60,9 +60,28 @@ exports.formData_create = async (req, res) => {
  * @param {*} req 
  * @param {*} res 
  */
-exports.delete = (req, res) => {
+exports.delete = async (req, res) => {
     try {
         const params = req.params || {};
+        if(!params || !Object.keys(params).length) {
+          return res.status(400).send(kit.setResponseDataFormat("GOODS-DELETE-000003")()("缺少必要参数"));
+        }
+
+        const { id, } = params;
+        if(!id) {
+          return res.status(400).send(kit.setResponseDataFormat("GOODS-DELETE-000005")()("id不能为空"));
+        }
+
+        const info = await Model.findByPk(id);
+        const { goods_img, } = info?.toJSON?.() || {};
+        if(goods_img) {
+          const list = String(goods_img).split("|");
+          if(Array.isArray(list) && list.length) {
+            const paths = list.map(item => `${ process.cwd() }${ goods_path }/${ item }`);
+            kit.batchFsUnlinkFn(paths);
+          }
+        }
+
         Model.destroy({
           where: params,
         }).then(() => {

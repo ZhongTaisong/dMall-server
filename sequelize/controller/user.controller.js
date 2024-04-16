@@ -136,6 +136,10 @@ exports.delete = async (req, res) => {
         }
 
         const { id, } = params;
+        if(!id) {
+          return res.status(400).send(kit.setResponseDataFormat("USER-DELETE-000005")()("id不能为空"));
+        }
+
         const info = await Model.findByPk(id);
         const { avatar, } = info?.toJSON?.() || {};
         if(avatar) {
