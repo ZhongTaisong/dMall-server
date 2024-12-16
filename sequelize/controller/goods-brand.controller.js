@@ -1,5 +1,6 @@
 const db = require("./../model/index");
 const kit = require('./../../kit');
+const config = require('./../../config');
 const model_name = "goods_brand";
 const Model = db[model_name];
 const Op = db.Sequelize.Op;
@@ -14,26 +15,37 @@ const isExistFn = kit.isExistFn(Model);
  * @returns 
  */
 exports.create = async (req, res) => {
+  const send = kit.createSendContentFn(res);
+
   try {
     const body = req.body || {};
     if(!body || !Object.keys(body).length) {
-      return res.status(400).send(kit.setResponseDataFormat("GOODS-BRAND-CREATE-000001")()("缺少必要参数"));
+      return send({
+        code: "GOODS-BRAND-CREATE-000001",
+        message: "参数不正确",
+      });
     }
 
     const { brand_name, } = body;
     const bol = await isExistFn({ brand_name, });
     if(bol) {
-      return res.status(200).send(kit.setResponseDataFormat("GOODS-BRAND-CREATE-000005")()("品牌名称已存在"));
+      return send({
+        code: "GOODS-BRAND-CREATE-000002",
+        message: "品牌名称已存在",
+      });
     }
   
-    Model.create({ brand_name, }).then(data => {
-      const result = data.toJSON();
-      res.status(200).send(kit.setResponseDataFormat()(result)());
-    }).catch(err => {
-      res.status(500).send(kit.setResponseDataFormat("GOODS-BRAND-CREATE-000002")()(err.message));
+    await Model.create({ brand_name, });
+    send({
+      code: config.SUCCESS_CODE,
+      message: "新增成功",
     });
+
   } catch (error) {
-    res.status(500).send(kit.setResponseDataFormat("GOODS-BRAND-CREATE-000003")()(error.message));
+    send({
+      code: "GOODS-BRAND-CREATE-000003",
+      error,
+    });
   }
 };
 
@@ -42,18 +54,32 @@ exports.create = async (req, res) => {
  * @param {*} req 
  * @param {*} res 
  */
-exports.delete = (req, res) => {
+exports.delete = async (req, res) => {
+  const send = kit.createSendContentFn(res);
+
   try {
     const params = req.params || {};
-    Model.destroy({
-      where: params,
-    }).then(() => {
-      res.status(200).send(kit.setResponseDataFormat()()("删除成功"));
-    }).catch(err => {
-      res.status(500).send(kit.setResponseDataFormat("GOODS-BRAND-DELETE-000001")()(err.message));
+    if(!params || !Object.keys(params).length) {
+      return send({
+        code: "GOODS-BRAND-DELETE-000002",
+        message: "参数不正确",
+      });
+    }
+
+    const result = await Model.destroy({
+      where: {...params},
     });
+
+    send({
+      code: result === 1 ? config.SUCCESS_CODE : "GOODS-BRAND-DELETE-000003",
+      message: result === 1 ? "删除成功" : "删除失败",
+    });
+
   } catch (error) {
-    res.status(500).send(kit.setResponseDataFormat("GOODS-BRAND-DELETE-000002")()(error.message));
+    send({
+      code: "GOODS-BRAND-DELETE-000001",
+      error,
+    });
   }
 };
 
@@ -63,34 +89,49 @@ exports.delete = (req, res) => {
  * @param {*} res 
  */
 exports.update = async (req, res) => {
-    try {
-        const body = req.body || {};
-        if(!body || !Object.keys(body).length) {
-          return res.status(400).send(kit.setResponseDataFormat("GOODS-BRAND-UPDATE-000001")()("缺少必要参数"));
-        }
+  const send = kit.createSendContentFn(res);
 
-        const { id, brand_name, } = body;
-        if(!id) {
-          return res.status(400).send(kit.setResponseDataFormat("GOODS-BRAND-UPDATE-000002")()("id不能为空"));
-        }
-
-        const bol = await isExistFn({ brand_name, });
-        if(bol) {
-          return res.status(200).send(kit.setResponseDataFormat("GOODS-BRAND-UPDATE-000006")()("品牌名称已存在"));
-        }
-
-        Model.update({ brand_name, }, {
-          where: { id, },
-          // 只保存这几个字段到数据库中
-          fields: ['brand_name',],
-        }).then(() => {
-            res.status(200).send(kit.setResponseDataFormat()()("更新成功"));
-        }).catch(err => {
-            res.status(500).send(kit.setResponseDataFormat("GOODS-BRAND-UPDATE-000003")()(err.message));
-        });
-    } catch (error) {
-        res.status(500).send(kit.setResponseDataFormat("GOODS-BRAND-UPDATE-000005")()(error.message));
+  try {
+    const body = req.body || {};
+    if(!body || !Object.keys(body).length) {
+      return send({
+        code: "GOODS-BRAND-UPDATE-000002",
+        message: "参数不正确",
+      });
     }
+
+    const { id, brand_name, } = body;
+    if(!id) {
+      return send({
+        code: "GOODS-BRAND-UPDATE-000003",
+        message: "参数不正确",
+      });
+    }
+
+    const bol = await isExistFn({ brand_name, });
+    if(bol) {
+      return send({
+        code: "GOODS-BRAND-UPDATE-000004",
+        message: "品牌名称已存在",
+      });
+    }
+
+    const [result] = await Model.update({ brand_name, }, {
+      where: { id, },
+      // 只保存这几个字段到数据库中
+      fields: ['brand_name',],
+    });
+    
+    send({
+      code: result === 1 ? config.SUCCESS_CODE : "GOODS-BRAND-UPDATE-000005",
+      message: result === 1 ? "更新成功" : "更新失败",
+    });
+  } catch (error) {
+    send({
+      code: "GOODS-BRAND-UPDATE-000001",
+      error,
+    });
+  }
 };
 
 /**
@@ -98,9 +139,14 @@ exports.update = async (req, res) => {
  * @param {*} req 
  * @param {*} res 
  */
-exports.findAll = (req, res) => {
+exports.list = async (req, res) => {
+  const send = kit.createSendContentFn(res);
+
   try {
-    let { brand_name, id, pageNum, pageSize, } = req.body || {};
+    const { brand_name, id, pageNum, pageSize, } = req.body || {};
+    const page_num = pageNum ?? 0;
+    const page_size = pageSize ?? 10;
+
     const params = {};
     if(id) {
       Object.assign(params, {
@@ -121,53 +167,42 @@ exports.findAll = (req, res) => {
       });
     }
 
-    const limit_params = {};
-    if(typeof pageNum !== 'undefined' || typeof pageSize !== 'undefined') {
-      // 跳过几个
-      pageNum = typeof pageNum === 'number' && pageNum >= 0 ? pageNum : 0;
-      // 每行限制几个
-      pageSize = typeof pageSize === 'number' && pageSize >= 0 ? pageSize : 10;
-
-      Object.assign(limit_params, {
-        offset: pageNum * pageSize,
-        limit: pageSize,
-      });
-    }
-
-    Model.findAndCountAll({ 
+    const result = await Model.findAndCountAll({ 
       where: params,
       order: [
         ['updatedAt', 'DESC'],
       ],
-      ...limit_params,
-    }).then(data => {
-      const rows = Array.isArray(data?.rows) ? data?.rows : []
-      const result = rows.map(item => {
-        const item_js = item.toJSON();
-        if(!item_js || !Object.keys(item_js).length) return;
+      offset: page_num * page_size,
+      limit: page_size,
+    });
 
-        Object.assign(item_js, {
-          createdAt: kit.dateToStringFn(item_js['createdAt']),
-          updatedAt: kit.dateToStringFn(item_js['updatedAt']),
-        })
-        return item_js;
-      }).filter(Boolean);
+    const rows = Array.isArray(result?.rows) ? result?.rows : [];
+    const content = rows.map(item => {
+      const item_js = item.toJSON();
+      if(!item_js || !Object.keys(item_js).length) return;
 
-      const content = {
-        list: result,
-        total: data?.count ?? 0,
-      }
-      if(limit_params && Object.keys(limit_params).length) {
-        Object.assign(content, {
-          pageNum,
-          pageSize,
-        });
-      }
-      res.status(200).send(kit.setResponseDataFormat()(content)());
-    }).catch(err => {
-      res.status(500).send(kit.setResponseDataFormat("GOODS-BRAND-FINDALL-000002")()(err.message));
+      Object.assign(item_js, {
+        createdAt: kit.dateToStringFn(item_js['createdAt']),
+        updatedAt: kit.dateToStringFn(item_js['updatedAt']),
+      })
+      return item_js;
+    }).filter(Boolean);
+
+    const total = result?.count ?? 0;
+    send({
+      code: config.SUCCESS_CODE,
+      context: {
+        pageNum: page_num,
+        pageSize: page_size,
+        total,
+        totalPages: Math.ceil(total / page_size),
+        content,
+      },
     });
   } catch (error) {
-    res.status(500).send(kit.setResponseDataFormat("GOODS-BRAND-FINDALL-000001")()(error.message));
+    send({
+      code: "GOODS-BRAND-LIST-000001",
+      error,
+    });
   }
 };

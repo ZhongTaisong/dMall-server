@@ -9,7 +9,8 @@
     "start:redis": "redis-server",
     "dev": "NODE_ENV=development nodemon --config ./nodemon.json ./bin/www",
     "start": "NODE_ENV=production node ./bin/www",
-    "client": "nodemon ./client.js"
+    "client": "nodemon ./client.js",
+    "cleanUpImages": "node ./utils/clean-up-images.js"
   },
   "author": "zhongtaisong",
   "license": "ISC",

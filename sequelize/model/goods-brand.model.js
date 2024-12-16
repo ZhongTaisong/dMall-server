@@ -1,5 +1,3 @@
-const kit = require('./../../kit');
-
 /**
  * 商品品牌 - 创建
  * @param {*} sequelize 实例

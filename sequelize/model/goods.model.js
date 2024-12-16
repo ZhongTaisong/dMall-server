@@ -8,7 +8,7 @@ const TABLE_NAME = "dm_goods";
 module.exports = (sequelize, DataTypes) => {
     return sequelize.define(TABLE_NAME, {
         goods_name: {
-            type: DataTypes.STRING,
+            type: DataTypes.STRING(30),
             comment: '商品名称',
             set(value) {
                 const val = String(value || "");
@@ -19,9 +19,9 @@ module.exports = (sequelize, DataTypes) => {
                 this.setDataValue('goods_name', val);
             },
         },
-        goods_description: {
-            type: DataTypes.STRING,
-            comment: '商品描述',
+        goods_subtitle: {
+            type: DataTypes.STRING(300),
+            comment: '商品副标题',
         },
         goods_price: {
             type: DataTypes.DECIMAL(10, 2),
@@ -35,13 +35,9 @@ module.exports = (sequelize, DataTypes) => {
                 this.setDataValue('goods_price', val);
             },
         },
-        goods_img: {
-            type: DataTypes.STRING,
+        goods_imgs: {
+            type: DataTypes.STRING(1000),
             comment: '商品图片',
-        },
-        goods_detail: {
-            type: DataTypes.STRING,
-            comment: '商品详情',
         },
     }, {
         /** 表名称与模型名称一致 */

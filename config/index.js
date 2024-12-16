@@ -41,26 +41,11 @@ exports.REQUEST_URL = `http://127.0.0.1:${ PORT }/api`;
 exports.SUCCESS_CODE = "DM000000";
 
 /**
- * 用户头像 - 图片存储路径
+ * 用户 - 图片存储路径
  */
-exports.AVATAR_PATH = "/public/assets/images/avatar";
+exports.USER_PATH = "/public/assets/images/user";
 
 /**
  * 商品 - 图片存储路径
  */
 exports.GOODS_PATH = "/public/assets/images/goods";
-
-/**
- * banner - 图片存储路径
- */
-exports.BANNER_PATH = "/public/assets/images/goods/banner";
-
-/**
- * 商品详情 - 图片存储路径
- */
-exports.GOODS_DETAIL_PATH = "/public/assets/images/goods/detail";
-
-/**
- * 商品主图 - 图片存储路径
- */
-exports.GOODS_MAIN_PATH = "/public/assets/images/goods/main";
