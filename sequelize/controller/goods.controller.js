@@ -48,7 +48,7 @@ exports.create = async (req, res) => {
     if(!Array.isArray(image_list) || image_list?.length !== goods_imgs?.length) {
       return send({
         code: "GOODS-CREATE-000005",
-        message: "商品图片查询异常",
+        message: "图片查询异常",
       });
     }
 
@@ -108,10 +108,10 @@ exports.delete = async (req, res) => {
 
     const delete_imgs = info?.goods_imgs ? info?.goods_imgs?.split?.('|') : [];
     const image_list = await ImageModel.findAll({ where: { url: delete_imgs }, });
-    if(!Array.isArray(image_list) || image_list?.length !== delete_imgs?.length) {
+    if(!Array.isArray(image_list)) {
       return send({
         code: "GOODS-DELETE-000005",
-        message: "商品图片查询异常",
+        message: "图片查询异常",
       });
     }
 
@@ -191,7 +191,7 @@ exports.update = async (req, res) => {
     if(!Array.isArray(image_list)) {
       return send({
         code: "GOODS-UPDATE-000007",
-        message: "商品图片查询异常",
+        message: "图片查询异常",
       });
     }
 

@@ -3,84 +3,98 @@ const kit = require('./../../kit');
 const config = require('./../../config');
 const model_name = "user";
 const Model = db[model_name];
+const ImageModel = db["image"];
 const Op = db.Sequelize.Op;
+const md5 = require('js-md5');
+const jwt = require('jsonwebtoken');
 
 /** 判断 - 字段是否已存在 */
 const isExistFn = kit.isExistFn(Model);
-/** 用户头像 - 图片存储路径 */
-const avatar_path = config.AVATAR_PATH;
 
 /**
- * 注册用户
+ * 新增用户、注册用户
  * @param {*} req
  * @param {*} res
  * @returns 
  */
 exports.create = async (req, res) => {
-  try {
-      const body = req.body || {};
-      if(!body || !Object.keys(body).length) {
-        return res.status(400).send(kit.setResponseDataFormat("USER-CREATE-000001")()("缺少必要参数"));
-      }
+  const path_name = req?.path;
+  const send = kit.createSendContentFn(res);
 
-      const { phone, password, nickname, avatar, } = body;
-      const bol = await isExistFn({ phone, });
-      if(bol) {
-        return res.status(200).send(kit.setResponseDataFormat("USER-CREATE-000005")()("手机号已被注册"));
-      }
-    
-      Model.create({ phone, password, nickname, avatar, }).then(data => {
-        const result = data.toJSON();
-        kit.batchDeleteObjKeyFn(result)(["password",]);
-        res.status(200).send(kit.setResponseDataFormat()(result)());
-      }).catch(err => {
-        res.status(500).send(kit.setResponseDataFormat("USER-CREATE-000002")()(err.message));
-      });
-  } catch (error) {
-      res.status(500).send(kit.setResponseDataFormat("USER-CREATE-000003")()(error.message));
-  }
-};
-
-/**
- * 注册用户 - FormData
- * @param {*} req
- * @param {*} res
- * @returns 
- */
-exports.formData_create = async (req, res) => {
-  const { filename, path, } = req.file || {};
   try {
     const body = req.body || {};
     if(!body || !Object.keys(body).length) {
-      kit.fsUnlinkFn(path);
-      return res.status(400).send(kit.setResponseDataFormat("USER-FORMDATA_CREATE-000003")()("缺少必要参数"));
-    }
-
-    if(filename) {
-      Object.assign(body, {
-        avatar: filename,
+      return send({
+        code: "USER-CREATE-000002",
+        message: "参数不正确",
       });
     }
 
     const { phone, password, nickname, avatar, } = body;
+    if (!phone || !password) {
+      return send({
+        code: "USER-CREATE-000003",
+        message: "参数不正确",
+      });
+    }
+
+    if(["/add"].includes(path_name)) {
+      if (!nickname || !avatar) {
+        return send({
+          code: "USER-CREATE-000006",
+          message: "参数不正确",
+        });
+      }
+    }
+
     const bol = await isExistFn({ phone, });
     if(bol) {
-      kit.fsUnlinkFn(path);
-      return res.status(200).send(kit.setResponseDataFormat("USER-FORMDATA_CREATE-000005")()("手机号码已被注册"));
+      return send({
+        code: "USER-CREATE-000004",
+        message: "手机号已被注册",
+      });
     }
-  
-    Model.create({ phone, password, nickname, avatar, }).then(data => {
-      const result = data.toJSON();
-      kit.batchDeleteObjKeyFn(result)(["password",]);
-      res.status(200).send(kit.setResponseDataFormat()(result)());
 
-    }).catch(err => {
-      kit.fsUnlinkFn(path);
-      res.status(500).send(kit.setResponseDataFormat("USER-FORMDATA_CREATE-000002")()(err.message));
+    if(["/add"].includes(path_name)) {
+      const image = await ImageModel.findOne({ where: { url: avatar }, });
+      if(!image) {
+        return send({
+          code: "USER-CREATE-000005",
+          message: "图片查询异常",
+        });
+      }
+    }
+
+    const params = {
+      phone, 
+      password: kit.md5(`${ phone }${ password }`), 
+    }
+
+    if(["/add"].includes(path_name)) {
+      Object.assign(params, {
+        nickname, avatar,
+      })
+    }
+
+    const result = await Model.create({...params});
+
+    if(["/add"].includes(path_name)) {
+      await image.update({ used: true, });
+    }
+
+    const context = result?.toJSON?.() || {};
+    delete context?.password;
+
+    send({
+      code: config.SUCCESS_CODE,
+      context,
+      message: ["/add"].includes(path_name) ? "新增成功" : "注册成功",
     });
   } catch (error) {
-    kit.fsUnlinkFn(path);
-    res.status(500).send(kit.setResponseDataFormat("USER-FORMDATA_CREATE-000001")()(error.message));
+    send({
+      code: "USER-CREATE-000001",
+      error,
+    });
   }
 };
 
@@ -91,35 +105,56 @@ exports.formData_create = async (req, res) => {
  * @returns 
  */
 exports.login = async (req, res) => {
+  const send = kit.createSendContentFn(res);
+
   try {
     const body = req.body || {};
     if(!body || !Object.keys(body).length) {
-      return res.status(400).send(kit.setResponseDataFormat("USER-LOGIN-000001")()("缺少必要参数"));
+      return send({
+        code: "USER-LOGIN-000002",
+        message: "参数不正确",
+      });
     }
 
     const { phone, password, } = body;
     if(!phone || !password) {
-      return res.status(400).send(kit.setResponseDataFormat("USER-LOGIN-000005")()("缺少用户名或密码"));
+      return send({
+        code: "USER-LOGIN-000003",
+        message: "参数不正确",
+      });
     }
 
     const pwd = kit.md5(`${ phone }${ password }`);
     const result = await Model.findOne({ 
-      where: { phone, password: pwd, },
+      where: { 
+        phone, 
+        password: pwd, 
+      },
       attributes: { exclude: ['password'] },
     });
 
-    const user_info = result ? result.toJSON() : {};
+    const user_info = result?.toJSON?.() || {};
     if(!user_info || !Object.keys(user_info).length) {
-      return res.status(200).send(kit.setResponseDataFormat("USER-LOGIN-000003")()("用户名或密码错误"));
+      return send({
+        code: "USER-LOGIN-000004",
+        message: "用户名或密码错误",
+      });
     }
 
     const token = kit.getTokenFn({ phone, });
     Object.assign(user_info, { token, });
   
-    res.status(200).send(kit.setResponseDataFormat()(user_info)("登录成功"));
+    send({
+      code: config.SUCCESS_CODE,
+      context: user_info,
+      message: "登录成功",
+    });
     
   } catch (error) {
-      res.status(500).send(kit.setResponseDataFormat("USER-LOGIN-000002")()(error.message));
+    send({
+      code: "USER-LOGIN-000001",
+      error,
+    });
   }
 };
 
@@ -129,33 +164,58 @@ exports.login = async (req, res) => {
  * @param {*} res 
  */
 exports.delete = async (req, res) => {
+  const send = kit.createSendContentFn(res);
+
     try {
-        const params = req.params || {};
-        if(!params || !Object.keys(params).length) {
-          return res.status(400).send(kit.setResponseDataFormat("USER-DELETE-000003")()("缺少必要参数"));
-        }
-
-        const { id, } = params;
-        if(!id) {
-          return res.status(400).send(kit.setResponseDataFormat("USER-DELETE-000005")()("id不能为空"));
-        }
-
-        const info = await Model.findByPk(id);
-        const { avatar, } = info?.toJSON?.() || {};
-        if(avatar) {
-          const path = `${ process.cwd() }${ avatar_path }/${ avatar }`;
-          kit.fsUnlinkFn(path);
-        }
-
-        Model.destroy({
-          where: params,
-        }).then(() => {
-            res.status(200).send(kit.setResponseDataFormat()()("删除成功"));
-        }).catch(err => {
-            res.status(500).send(kit.setResponseDataFormat("USER-DELETE-000002")()(err.message));
+      const params = req.params || {};
+      if(!params || !Object.keys(params).length) {
+        return send({
+          code: "USER-DELETE-000002",
+          message: "参数不正确",
         });
+      }
+
+      const { id, } = params;
+      if(!id) {
+        return send({
+          code: "USER-DELETE-000003",
+          message: "参数不正确",
+        });
+      }
+
+      const info = await Model.findByPk(id);
+      if(!info) {
+        return send({
+          code: "USER-DELETE-000004",
+          message: "用户信息查询异常",
+        });
+      }
+  
+      const delete_imgs = info?.avatar ? info?.avatar?.split?.('|') : [];
+      const image_list = await ImageModel.findAll({ where: { url: delete_imgs }, });
+      if(!Array.isArray(image_list)) {
+        return send({
+          code: "USER-DELETE-000005",
+          message: "图片查询异常",
+        });
+      }
+  
+      const result = await Model.destroy({
+        where: {...params},
+      });
+  
+      await Promise.all(image_list.map(item => item.update({ used: false, })));
+  
+      send({
+        code: result === 1 ? config.SUCCESS_CODE : "USER-DELETE-000006",
+        message: result === 1 ? "删除成功" : "删除失败",
+      });
+
     } catch (error) {
-        res.status(500).send(kit.setResponseDataFormat("USER-DELETE-000001")()(error.message));
+      send({
+        code: "USER-DELETE-000001",
+        error,
+      });
     }
 };
 
@@ -164,83 +224,63 @@ exports.delete = async (req, res) => {
  * @param {*} req 
  * @param {*} res 
  */
-exports.update = (req, res) => {
-    try {
-        const body = req.body || {};
-        if(!body || !Object.keys(body).length) {
-          return res.status(400).send(kit.setResponseDataFormat("USER-UPDATE-000001")()("缺少必要参数"));
-        }
+exports.update = async (req, res) => {
+  const send = kit.createSendContentFn(res);
 
-        const { id, ...rest } = body;
-        if(!id) {
-          return res.status(400).send(kit.setResponseDataFormat("USER-UPDATE-000002")()("id不能为空"));
-        }
-
-        Model.update(rest, {
-          where: { id, },
-          // 只保存这几个字段到数据库中
-          fields: ['nickname', 'avatar'],
-        }).then(() => {
-            res.status(200).send(kit.setResponseDataFormat()()("更新成功"));
-        }).catch(err => {
-            res.status(500).send(kit.setResponseDataFormat("USER-UPDATE-000003")()(err.message));
-        });
-    } catch (error) {
-        res.status(500).send(kit.setResponseDataFormat("USER-UPDATE-000005")()(error.message));
-    }
-};
-
-/**
- * 更新指定用户 - FormData
- * @param {*} req 
- * @param {*} res 
- */
-exports.formData_update = async (req, res) => {
-  let { filename, path, } = req.file || {};
   try {
     const body = req.body || {};
-    if(!body || !Object.keys(body).length) {
-      kit.fsUnlinkFn(path);
-      return res.status(400).send(kit.setResponseDataFormat("USER-FORMDATA_UPDATE-000003")()("缺少必要参数"));
+    if (!body || !Object.keys(body).length) {
+      return send({
+        code: "USER-UPDATE-000002",
+        message: "参数不正确",
+      });
     }
-
-    const body_avatar = String(body?.avatar || "");
-    if(body_avatar && body_avatar.includes(config.AVATAR_PATH) && !filename) {
-      filename = body_avatar?.split?.(`${ avatar_path }/`)?.[1] || "";
-    }
-
-    Object.assign(body, {
-      avatar: filename || "",
-    });
 
     const { id, nickname, avatar, } = body;
-    if(!id) {
-      kit.fsUnlinkFn(path);
-      return res.status(400).send(kit.setResponseDataFormat("USER-FORMDATA_UPDATE-000005")()("id不能为空"));
+    if (!id || !nickname || !avatar) {
+      return send({
+        code: "USER-UPDATE-000003",
+        message: "参数不正确",
+      });
     }
 
     const info = await Model.findByPk(id);
-    const { avatar: avatar_prev, } = info?.toJSON?.() || {};
+    if(!info) {
+      return send({
+        code: "USER-UPDATE-000006",
+        message: "用户信息查询异常",
+      });
+    }
 
-    Model.update({ nickname, avatar, }, {
+    const current_imgs = info?.avatar ? info?.avatar?.split?.('|') : [];
+    const new_imgs = avatar;
+    const imgs = [...current_imgs, ...new_imgs];
+    const image_list = await ImageModel.findAll({ where: { url: imgs, }, });
+    if(!Array.isArray(image_list)) {
+      return send({
+        code: "USER-UPDATE-000007",
+        message: "图片查询异常",
+      });
+    }
+    const [result] = await Model.update({
+      nickname,
+      avatar: new_imgs.join("|"),
+    }, {
       where: { id, },
-      // 只保存这几个字段到数据库中
-      fields: ['nickname', 'avatar'],
-    }).then(() => {
-      const avatar_new = avatar;
-      if(avatar_new !== avatar_prev && avatar_prev) {
-        path = `${ process.cwd() }${ avatar_path }/${ avatar_prev }`;
-        kit.fsUnlinkFn(path);
-      }
-
-      res.status(200).send(kit.setResponseDataFormat()()("更新成功"));
-    }).catch(err => {
-      kit.fsUnlinkFn(path);
-      res.status(500).send(kit.setResponseDataFormat("USER-FORMDATA_UPDATE-000002")()(err.message));
     });
+
+    await Promise.all(image_list.map(item => item.update({ used: new_imgs.includes(item?.url), })));
+    
+    send({
+      code: result === 1 ? config.SUCCESS_CODE : "USER-UPDATE-000008",
+      message: result === 1 ? "更新成功" : "更新失败",
+    });
+
   } catch (error) {
-    kit.fsUnlinkFn(path);
-    res.status(500).send(kit.setResponseDataFormat("USER-FORMDATA_UPDATE-000001")()(error.message));
+    send({
+      code: "USER-UPDATE-000001",
+      error,
+    });
   }
 };
 
@@ -249,9 +289,14 @@ exports.formData_update = async (req, res) => {
  * @param {*} req 
  * @param {*} res 
  */
-exports.findAll = (req, res) => {
+exports.list = async (req, res) => {
+  const send = kit.createSendContentFn(res);
+
   try {
-    let { phone, nickname, id, pageNum, pageSize, } = req.body || {};
+    const { phone, nickname, id, pageNum, pageSize, } = req.body || {};
+    const page_num = pageNum ?? 0;
+    const page_size = pageSize ?? 10;
+
     const params = {};
     if(id) {
       Object.assign(params, {
@@ -278,55 +323,249 @@ exports.findAll = (req, res) => {
       });
     }
 
-    const limit_params = {};
-    if(typeof pageNum !== 'undefined' || typeof pageSize !== 'undefined') {
-      // 跳过几个
-      pageNum = typeof pageNum === 'number' && pageNum >= 0 ? pageNum : 0;
-      // 每行限制几个
-      pageSize = typeof pageSize === 'number' && pageSize >= 0 ? pageSize : 10;
-
-      Object.assign(limit_params, {
-        offset: pageNum * pageSize,
-        limit: pageSize,
-      });
-    }
-
-    Model.findAndCountAll({ 
+    const result = await Model.findAndCountAll({ 
       where: params,
       attributes: { exclude: ['password'] },
       order: [
         ['updatedAt', 'DESC'],
       ],
-      ...limit_params,
-    }).then(data => {
-      const rows = Array.isArray(data?.rows) ? data?.rows : []
-      const result = rows.map(item => {
-        const item_js = item.toJSON();
-        if(!item_js || !Object.keys(item_js).length) return;
+      offset: page_num * page_size,
+      limit: page_size,
+    });
 
-        Object.assign(item_js, {
-          createdAt: kit.dateToStringFn(item_js['createdAt']),
-          updatedAt: kit.dateToStringFn(item_js['updatedAt']),
-          avatar: kit.joinFullImgUrlFn("AVATAR_PATH", item_js['avatar']),
-        })
-        return item_js;
-      }).filter(Boolean);
+    const rows = result?.rows?.map?.(item => item?.get?.({ plain: true, }))?.filter?.(Boolean) || [];
+    const total = result?.count ?? 0;
+    const content = rows.map(item => {
+      if(!item || !Object.keys(item).length) return;
 
-      const content = {
-        list: result,
-        total: data?.count ?? 0,
-      }
-      if(limit_params && Object.keys(limit_params).length) {
-        Object.assign(content, {
-          pageNum,
-          pageSize,
-        });
-      }
-      res.status(200).send(kit.setResponseDataFormat()(content)());
-    }).catch(err => {
-      res.status(500).send(kit.setResponseDataFormat("USER-FINDALL-000002")()(err.message));
+      const img_list = String(item['avatar'] || "").split("|");
+      Object.assign(item, {
+        createdAt: kit.dateToStringFn(item['createdAt']),
+        updatedAt: kit.dateToStringFn(item['updatedAt']),
+        avatar: img_list,
+      });
+
+      return item;
+    }).filter(Boolean);
+    
+    send({
+      code: config.SUCCESS_CODE,
+      context: {
+        pageNum: page_num,
+        pageSize: page_size,
+        total,
+        totalPages: Math.ceil(total / page_size),
+        content,
+      },
+    });
+
+  } catch (error) {
+    send({
+      code: "USER-LIST-000001",
+      error,
+    });
+  }
+};
+
+/**
+ * 退出登录
+ * @param {*} req 
+ * @param {*} res 
+ */
+exports.logout = async (req, res) => {
+  const send = kit.createSendContentFn(res);
+
+  try {
+    const token = req?.headers?.authorization?.split?.(' ')?.[1] || "";
+    const decoded = jwt.decode(token);
+    if(!decoded) {
+      return send({
+        code: "USER-LOGOUT-000002",
+        message: "jwt解码异常",
+      });
+    }
+
+    const expiresIn = decoded.exp * 1000 - Date.now();
+    await kit.addToBlacklistFn(token, expiresIn);
+    
+    send({
+      code: config.SUCCESS_CODE,
+      message: "退出登录成功",
     });
   } catch (error) {
-    res.status(500).send(kit.setResponseDataFormat("USER-FINDALL-000001")()(error.message));
+    send({
+      code: "USER-LOGOUT-000001",
+      error,
+    });
+  }
+}
+
+/**
+ * 重置用户密码
+ * @param {*} req
+ * @param {*} res
+ * @returns 
+ */
+exports.resetPassword = async (req, res) => {
+  const send = kit.createSendContentFn(res);
+
+  try {
+    const body = req.body || {};
+    if(!body || !Object.keys(body).length) {
+      return send({
+        code: "USER-RESET_PASSWORD-000002",
+        message: "参数不正确",
+      });
+    }
+
+    const { id, phone, } = body;
+    if(!id || !phone) {
+      return send({
+        code: "USER-RESET_PASSWORD-000002",
+        message: "参数不正确",
+      });
+    }
+
+    const context = kit.getRandomPasswordFn(6);
+    const password = md5(context);
+    const pwd = kit.md5(`${ phone }${ password }`);
+    const [result] = await Model.update({
+      password: pwd, 
+    }, {
+      where: { id, phone, },
+    });
+    if(result !== 1) {
+      return send({
+        code: "USER-RESET_PASSWORD-000003",
+        message: "重置失败",
+      });
+    }
+    
+    send({
+      code: config.SUCCESS_CODE,
+      context,
+      message: "重置成功",
+    });
+  } catch (error) {
+    send({
+      code: "USER-RESET_PASSWORD-000001",
+      error,
+    });
+  }
+};
+
+/**
+ * 修改用户密码
+ * @param {*} req
+ * @param {*} res
+ * @returns 
+ */
+exports.changePassword = async (req, res) => {
+  const send = kit.createSendContentFn(res);
+
+  try {
+    const body = req.body || {};
+    if(!body || !Object.keys(body).length) {
+      return send({
+        code: "USER-CHANGE_PASSWORD-000002",
+        message: "参数不正确",
+      });
+    }
+
+    const { phone, oldPassword, password, } = body;
+    if(!phone || !oldPassword || !password) {
+      return send({
+        code: "USER-CHANGE_PASSWORD-000002",
+        message: "参数不正确",
+      });
+    }
+
+    const old_password = kit.md5(`${ phone }${ oldPassword }`);
+    const info = await Model.findOne({ 
+      where: { 
+        phone, 
+        password: old_password, 
+      },
+      attributes: { exclude: ['password'] },
+    });
+
+    const user_info = info?.toJSON?.() || {};
+    if(!user_info || !Object.keys(user_info).length) {
+      return send({
+        code: "USER-CHANGE_PASSWORD-000003",
+        message: "旧密码错误",
+      });
+    }
+
+    const new_password = kit.md5(`${ phone }${ password }`);
+    await info?.update?.({
+      password: new_password, 
+    });
+
+    send({
+      code: config.SUCCESS_CODE,
+      message: "修改成功",
+    });
+    
+  } catch (error) {
+    send({
+      code: "USER-CHANGE_PASSWORD-000001",
+      error,
+    });
+  }
+};
+
+/**
+ * 查询登录用户信息
+ * @param {*} req
+ * @param {*} res
+ * @returns 
+ */
+exports.info = async (req, res) => {
+  const send = kit.createSendContentFn(res);
+
+  try {
+    const token = req?.headers?.authorization?.split?.(' ')?.[1] || "";
+    const info = jwt.decode(token);
+    if(!info || !Object.keys(info).length) {
+      return send({
+        code: "USER-INFO-000002",
+        message: "jwt解码异常",
+      });
+    }
+
+    const { phone, } = info;
+    if(!phone) {
+      return send({
+        code: "USER-INFO-000003",
+        message: "用户信息异常",
+      });
+    }
+
+    const result = await Model.findOne({ 
+      where: { 
+        phone,
+      },
+      attributes: { exclude: ['password'] },
+    });
+
+    const user_info = result?.toJSON?.() || {};
+    if(!user_info || !Object.keys(user_info).length) {
+      return send({
+        code: "USER-INFO-000004",
+        message: "查询登录用户信息失败",
+      });
+    }
+
+    send({
+      code: config.SUCCESS_CODE,
+      context: user_info,
+      message: "查询登录用户信息成功",
+    });
+  } catch (error) {
+    send({
+      code: "USER-INFO-000001",
+      error,
+    });
   }
 };

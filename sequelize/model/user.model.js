@@ -29,21 +29,6 @@ module.exports = (sequelize, DataTypes) => {
         password: {
             type: DataTypes.STRING,
             comment: '用户密码',
-            set(value) {
-                const phone = this.getDataValue('phone');
-                const val = String(value || "");
-                if(!val) {
-                    throw new Error('用户密码不能为空');
-                }
-                
-                const { bol, tip, min, max, } = kit.validatePasswordFn(val);
-                if(!bol) {
-                    throw new Error(`请输入${ min }至${ max }位用户密码,密码${ tip }`);
-                }
-            
-                const pwd = kit.md5(`${ phone }${ val }`);
-                this.setDataValue('password', pwd);
-            },
         },
         nickname: {
             type: DataTypes.STRING,
