@@ -1,29 +1,20 @@
-const createError = require('http-errors');
 const express = require('express');
 const path = require('path');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const logger = require('morgan');
 const helmet = require('helmet');
-const session = require('express-session');
 // 验证token
 const { expressjwt } = require('express-jwt');
 const pool = require('./pool');
 const config = require('./config');
 const kit = require('./kit');
 const app = express();
-const swaggerUi = require('swagger-ui-express');
 const multer = require('multer');
-// 路由器标识
-const ROUTER_Flag = "APP";
-
-// 视图模板引擎 - 配置
-app.set('views', path.join(__dirname, 'views'));
-app.set('view engine', 'jade');
 
 if(process.env.NODE_ENV === 'production') {
-    // 开启安全防护
-    app.use(helmet());
+  // 开启安全防护
+  app.use(helmet());
 }
 
 // 跨域访问 - 配置
@@ -42,13 +33,6 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use('/api/public', express.static(path.join(__dirname, 'public')));
 
-app.use(session({
-  secret: config.SECRET_KEY, 
-  resave: false,
-  saveUninitialized: true,
-  cookie: { secure: true },
-}));
-
 /** 将pool挂在到req上 */
 app.use((req, res, next) => {
   req.pool = pool;
@@ -60,66 +44,38 @@ app.use(
   expressjwt({ 
     secret: config.SECRET_KEY, 
     algorithms: ['HS256'],
+    isRevoked: async (req) => {
+      const token = req?.headers?.authorization?.split?.(' ')?.[1] || "";
+      const blacklisted = await kit.isTokenBlacklistedFn(token);
+      return blacklisted;
+    },
   }).unless({ path: [config.PUBLIC_PATH,] })
 );
 
-/** 当“退出登录”时，验证token是否在jwt黑名单中 */
-app.use((req, res, next) => {
-  const { authorization, } = req.headers;
-  if(!config.PUBLIC_PATH.test(req.url)) {
-    const session = req.session;
-    const token = authorization.slice(7);
-    if(session && Object.keys(session).length) {
-      const user_name = session[token];
-      if(!user_name) {
-        return next(createError(401));
-      }
-    }
-  }
+app.use(function(err, req, res, next) {
+  const send = kit.createSendContentFn(res);
+  if(err?.name === 'UnauthorizedError') {
+    return send({
+      code: "APP-ERR-000001",
+      message: "身份认证失败",
+      error: err,
+    });
+  } 
 
-  next();
+  if(err instanceof multer.MulterError) {
+    return send({
+      code: "APP-ERR-000002",
+      message: "上传操作异常",
+      error: err,
+    });
+  }
 });
 
 /** 路由中间件 */
-// app.use('/api/home', require('./routes/home.js'));
-// app.use('/api/goods-list', require('./routes/goods-list.js'));
-// app.use('/api/goods-detail', require('./routes/goods-detail.js'));
-// app.use('/api/message-board', require('./routes/message-board.js'));
-// app.use('/api/user', require('./routes/user.js'));
-// app.use('/api/shopping-cart', require('./routes/shopping-cart.js'));
-// app.use('/api/goods-evaluate', require('./routes/goods-evaluate.js'));
-// app.use('/api/order', require('./routes/order.js'));
-// app.use('/api/goods-collection', require('./routes/goods-collection.js'));
-// app.use('/api/address', require('./routes/address.js'));
-// app.use('/api/admin/brands', require('./routes/admin/brands.js'));
-// app.use('/api/admin/order', require('./routes/admin/order.js'));
-// app.use('/api/admin/goods-evaluate', require('./routes/admin/goods-evaluate.js'));
-// app.use('/api/admin/goods', require('./routes/admin/goods.js'));
-// app.use('/api/admin/user', require('./routes/admin/user.js'));
-// app.use('/api/admin/permission', require('./routes/admin/permission.js'));
+app.use('/api/image', require('./router/image.router.js')());
 app.use('/api/user', require('./router/user.router.js')());
 app.use('/api/goods-brand', require('./router/goods-brand.router.js')());
 app.use('/api/goods', require('./router/goods.router.js')());
-app.use('/public/api/docs', swaggerUi.serve, swaggerUi.setup(require("./config/swagger-jsdoc.js")));
-
-// error handler
-app.use(function(err, req, res, next) {
-  if(err.status === 401) {
-    return res.status(401).send(kit.setResponseDataFormat("APP-ERR-000001")()("身份认证失败"));
-  }
-
-  if(err instanceof multer.MulterError) {
-    return res.status(404).send(kit.setResponseDataFormat("APP-ERR-000002")()("上传操作异常"));
-  }
-  
-  // set locals, only providing error in development
-  res.locals.message = err.message;
-  res.locals.error = req.app.get('env') === 'development' ? err : {};
-
-  // render the error page
-  res.status(err.status || 500);
-  res.render('error');
-});
 
 /** 自定义端口号 */
 process.env.PORT = config.PORT;

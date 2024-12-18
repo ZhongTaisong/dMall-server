@@ -28,6 +28,10 @@ const model_list = [
         name: "image",
         model: require("./image.model.js"),
     },
+    {
+        name: "blackTokenList",
+        model: require("./black-token-list.model.js"),
+    },
 ];
 model_list.forEach(item => {
     const { name, model, } = item;

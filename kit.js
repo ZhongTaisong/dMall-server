@@ -9,6 +9,8 @@ const config = require('./config');
 const moment = require('moment');
 // 生成token
 const jwt = require('jsonwebtoken');
+const model = require("./sequelize/model/index");
+const BlackTokenListModel = model["blackTokenList"];
 
 /**
  * 获取 - 请求成功后的数据
@@ -47,26 +49,6 @@ exports.promiseAllSettled = (data) => {
 exports.md5 = (val) => {
     const md5 = crypto.createHash('md5');
     return md5.update(val).digest('hex');
-};
-
-// jwt-blacklist.txt 文件路径
-const jwt_blacklist_path = path.join(__dirname, 'jwt-blacklist.txt');
-/**
- * 将token写入黑名单
- * @param {*} data 
- * @returns 
- */
-exports.writeJWTBlackListFn = (data) => {
-    if(!data) return;
-
-    const isExist = fs.existsSync(jwt_blacklist_path);
-    if(!isExist) {
-        fs.writeFileSync(jwt_blacklist_path, data);
-
-    }else {
-        const content = fs.readFileSync(jwt_blacklist_path).toString();
-        fs.writeFileSync(jwt_blacklist_path, `${ content }\r\n${ data }`);
-    }
 };
 
 /**
@@ -168,7 +150,7 @@ exports.getUuid = () => {
  * @returns 
  */
 exports.validatePhone = (value) => {
-    const reg = /^((1[3,5,8][0-9])|(14[5,7])|(17[0,6,7,8])|(19[7]))\d{8}$/;
+    const reg = /^1[3-9]\d{9}$/;
     return reg.test(value);
 };
 
@@ -186,12 +168,8 @@ exports.upload = (params) => {
     if(!params || !Object.keys(params).length) return;
 
     const path_map = {
-        avatar: config.AVATAR_PATH,
-        main_picture: config.GOODS_MAIN_PATH,
-        goods_picture: config.GOODS_MAIN_PATH,
-        detail_picture: config.GOODS_DETAIL_PATH,
-        banner_picture: config.BANNER_PATH,
-        goods_imgs: config.GOODS_PATH,
+        user: config.USER_PATH,
+        goodsImgs: config.GOODS_PATH,
     };
 
     let { fileName, fileFormat, } = params;
@@ -266,10 +244,10 @@ exports.batchDeleteObjKeyFn = (obj) => (list) => {
 exports.validatePasswordFn = (value) => {
     const min = 6;
     const max = 8;
-    const reg = new RegExp(`^[A-Za-z0-9]{${ min },${ max }}$`);
+    const reg = new RegExp(`^[0-9]{${ min },${ max }}$`);
     return {
         bol: reg.test(value),
-        tip: "仅限输入数字、字母 或 两者组合",
+        tip: "仅限输入数字",
         min,
         max,
     };
@@ -405,3 +383,100 @@ exports.uploadImgFn = (params) => {
         ...params,
     });
 };
+
+/**
+ * 创建响应体 - 操作
+ * @param res 
+ * @param params 
+ * @returns 
+ */
+exports.createSendContentFn = (res) => (params) => {
+    if(!res || !Object.keys(res).length) return;
+
+    const code = params?.code ?? null;
+    const context = params?.context ?? null;
+    const error = params?.error ?? null;
+    let message = params?.message ?? null;
+    if(!message) {
+        message = code === config.SUCCESS_CODE ? "操作成功" : "操作失败";
+    }
+
+    if(code !== config.SUCCESS_CODE) {
+        exports.createLogContentFn({
+            path: code,
+            msg: message,
+            error,
+        });
+    }
+
+    res?.status?.(200)?.send({
+        code,
+        context,
+        message,
+    });
+}
+
+/**
+ * 创建日志信息 - 操作
+ * @param params 
+ * @returns 
+ */
+exports.createLogContentFn = (params) => {
+    if(!params || !Object.keys(params).length) return;
+
+    const date = new Date();
+    const time = date.toLocaleString();
+    const { path, msg, error, } = params;
+    if(!path) return;
+
+    console.log(`${ time } --- ${ path } --- ${ msg || "操作失败" }`, { content: error || {}, });
+}
+
+/**
+ * 生成随机密码
+ * @param {*} n 
+ * @returns 
+ */
+exports.getRandomPasswordFn = (n) => {
+    const n0 = n || 6;
+    const n1 = 2;
+    const n2 = 2 + n0;
+    let password = Math.random().toString().slice(n1, n2);
+    if(password?.length < 6) {
+        return getRandomPasswordFn(n0);
+    }
+
+    return password;
+}
+
+/**
+ * 登录令牌黑名单 - 加入操作
+ * @param {*} token 
+ * @param {*} expiresIn 
+ */
+exports.addToBlacklistFn = async (token, expiresIn) => {
+    const expiresAt = new Date(Date.now() + expiresIn * 1000);
+    await BlackTokenListModel.create({ token, expiresAt });
+ }
+
+ /**
+ * 登录令牌是否已加入黑名单 - 判断操作
+ * @param {*} token 
+ */
+ exports.isTokenBlacklistedFn = async (token) => {
+    const result = await BlackTokenListModel.findOne({ where: { token } });
+    return result !== null;   
+ }
+    
+/**
+ * 清理过期令牌 - 操作
+ */
+ exports.clearExpiredTokensFn = async () => {
+    await BlackTokenListModel.destroy({
+      where: {
+        expiresAt: {
+          [Sequelize.Op.lte]: new Date(),
+        },
+      },
+    });
+ } 
