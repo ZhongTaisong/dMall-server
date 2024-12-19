@@ -593,3 +593,89 @@ exports.info = async (req, res) => {
     });
   }
 };
+
+/**
+ * 更新登录用户信息
+ * @param {*} req 
+ * @param {*} res 
+ */
+exports.updateInfo = async (req, res) => {
+  const send = kit.createSendContentFn(res);
+
+  try {
+    const body = req.body || {};
+    if (!body || !Object.keys(body).length) {
+      return send({
+        code: "USER-UPDATE_INFO-000002",
+        message: "参数不正确",
+      });
+    }
+
+    const { nickname, avatar, } = body;
+    if (!nickname || !avatar) {
+      return send({
+        code: "USER-UPDATE_INFO-000003",
+        message: "参数不正确",
+      });
+    }
+
+    const login_info = kit.getUserInfoFn(req);
+    if(!login_info || !Object.keys(login_info).length) {
+      return send({
+        code: "USER-UPDATE_INFO-000004",
+        message: "解析用户信息异常",
+      });
+    }
+
+    const info = await Model.findOne({ 
+      where: { 
+        phone: login_info?.phone,
+      },
+    });
+    if(!info) {
+      return send({
+        code: "USER-UPDATE_INFO-000005",
+        message: "用户信息查询异常",
+      });
+    }
+
+    const current_imgs = info?.avatar ? info?.avatar?.split?.('|') : [];
+    const new_imgs = avatar;
+    const imgs = [...current_imgs, ...new_imgs];
+    const image_list = await ImageModel.findAll({ where: { url: imgs, }, });
+    if(!Array.isArray(image_list)) {
+      return send({
+        code: "USER-UPDATE_INFO-000006",
+        message: "图片查询异常",
+      });
+    }
+    const [result] = await Model.update({
+      nickname,
+      avatar: new_imgs.join("|"),
+    }, {
+      where: {
+        phone: login_info?.phone,
+      },
+    });
+
+    await Promise.all(image_list.map(item => item.update({ used: new_imgs.includes(item?.url), })));
+
+    if(result !== 1) {
+      return send({
+        code: "USER-UPDATE_INFO-000006",
+        message: "更新失败",
+      });
+    }
+    
+    send({
+      code: config.SUCCESS_CODE,
+      message: "更新成功",
+    });
+
+  } catch (error) {
+    send({
+      code: "USER-UPDATE_INFO-000001",
+      error,
+    });
+  }
+};

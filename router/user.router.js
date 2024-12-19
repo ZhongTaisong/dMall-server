@@ -17,5 +17,6 @@ module.exports = () => {
     router.post('/resetPassword', controller.resetPassword);
     router.post('/changePassword', controller.changePassword);
     router.get('/info', controller.info);
+    router.post('/info/update', controller.updateInfo);
     return router;
 }
