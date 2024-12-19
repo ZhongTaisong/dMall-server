@@ -479,4 +479,34 @@ exports.addToBlacklistFn = async (token, expiresIn) => {
         },
       },
     });
- } 
+ }
+
+ /**
+  * 角色操作权限 - 获取操作
+  * @returns 
+  */
+ exports.getRoleActionsFn = (role) => {
+    let actions = [];
+
+    switch (role) {
+      case "0":
+        actions = ["add", "upate", "delete", "reset_password",];
+        break;
+      case "1":
+        actions = ["add", "upate",];
+        break;
+    }
+
+    return actions;
+ }
+
+ /**
+  * 获取当前登录用户信息 - 操作
+  * @param {*} req 
+  * @returns 
+  */
+ exports.getUserInfoFn = (req) => {
+    const token = req?.headers?.authorization?.split?.(' ')?.[1] || "";
+    const info = jwt.decode(token);
+    return info;
+ }

@@ -46,6 +46,10 @@ module.exports = (sequelize, DataTypes) => {
                 this.setDataValue('avatar', val || null);
             },
         },
+        role: {
+            type: DataTypes.STRING,
+            comment: '角色',
+        },
     }, {
         /** 表名称与模型名称一致 */
         freezeTableName: true,

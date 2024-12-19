@@ -31,7 +31,8 @@ exports.create = async (req, res) => {
     }
 
     const { phone, password, nickname, avatar, } = body;
-    if (!phone || !password) {
+    const role = body?.role || "2";
+    if (!phone || !password || !role) {
       return send({
         code: "USER-CREATE-000003",
         message: "参数不正确",
@@ -55,19 +56,10 @@ exports.create = async (req, res) => {
       });
     }
 
-    if(["/add"].includes(path_name)) {
-      const image = await ImageModel.findOne({ where: { url: avatar }, });
-      if(!image) {
-        return send({
-          code: "USER-CREATE-000005",
-          message: "图片查询异常",
-        });
-      }
-    }
-
     const params = {
       phone, 
       password: kit.md5(`${ phone }${ password }`), 
+      role,
     }
 
     if(["/add"].includes(path_name)) {
@@ -79,6 +71,14 @@ exports.create = async (req, res) => {
     const result = await Model.create({...params});
 
     if(["/add"].includes(path_name)) {
+      const image = await ImageModel.findOne({ where: { url: avatar }, });
+      if(!image) {
+        return send({
+          code: "USER-CREATE-000005",
+          message: "图片查询异常",
+        });
+      }
+
       await image.update({ used: true, });
     }
 
@@ -141,8 +141,13 @@ exports.login = async (req, res) => {
       });
     }
 
-    const token = kit.getTokenFn({ phone, });
-    Object.assign(user_info, { token, });
+    const token = kit.getTokenFn({
+      phone,
+      role: user_info?.role,
+    });
+    Object.assign(user_info, { 
+      token,
+    });
   
     send({
       code: config.SUCCESS_CODE,
@@ -237,7 +242,8 @@ exports.update = async (req, res) => {
     }
 
     const { id, nickname, avatar, } = body;
-    if (!id || !nickname || !avatar) {
+    const role = body?.role || "2";
+    if (!id || !nickname || !avatar || !role) {
       return send({
         code: "USER-UPDATE-000003",
         message: "参数不正确",
@@ -265,6 +271,7 @@ exports.update = async (req, res) => {
     const [result] = await Model.update({
       nickname,
       avatar: new_imgs.join("|"),
+      role,
     }, {
       where: { id, },
     });
@@ -293,7 +300,7 @@ exports.list = async (req, res) => {
   const send = kit.createSendContentFn(res);
 
   try {
-    const { phone, nickname, id, pageNum, pageSize, } = req.body || {};
+    const { phone, nickname, id, pageNum, pageSize, role, } = req.body || {};
     const page_num = pageNum ?? 0;
     const page_size = pageSize ?? 10;
 
@@ -301,6 +308,12 @@ exports.list = async (req, res) => {
     if(id) {
       Object.assign(params, {
         id,
+      });
+    }
+
+    if(role) {
+      Object.assign(params, {
+        role,
       });
     }
 
@@ -327,22 +340,33 @@ exports.list = async (req, res) => {
       where: params,
       attributes: { exclude: ['password'] },
       order: [
-        ['updatedAt', 'DESC'],
+        ['createdAt', 'DESC'],
       ],
       offset: page_num * page_size,
       limit: page_size,
     });
+
+    const info = kit.getUserInfoFn(req);
+    if(!info || !Object.keys(info).length) {
+      return send({
+        code: "USER-LIST-000002",
+        message: "解析用户信息异常",
+      });
+    }
 
     const rows = result?.rows?.map?.(item => item?.get?.({ plain: true, }))?.filter?.(Boolean) || [];
     const total = result?.count ?? 0;
     const content = rows.map(item => {
       if(!item || !Object.keys(item).length) return;
 
-      const img_list = String(item['avatar'] || "").split("|");
+      const img_list = String(item['avatar'] || "").split("|").filter(Boolean);
+      const role = item?.role || "2";
       Object.assign(item, {
         createdAt: kit.dateToStringFn(item['createdAt']),
         updatedAt: kit.dateToStringFn(item['updatedAt']),
         avatar: img_list,
+        role,
+        isAction: info?.phone !== item?.phone && Number(role) > Number(info?.role),
       });
 
       return item;
@@ -356,6 +380,7 @@ exports.list = async (req, res) => {
         total,
         totalPages: Math.ceil(total / page_size),
         content,
+        actions: kit.getRoleActionsFn(kit.getUserInfoFn(req)?.role),
       },
     });
 
@@ -377,11 +402,11 @@ exports.logout = async (req, res) => {
 
   try {
     const token = req?.headers?.authorization?.split?.(' ')?.[1] || "";
-    const decoded = jwt.decode(token);
+    const decoded = kit.getUserInfoFn(req);
     if(!decoded) {
       return send({
         code: "USER-LOGOUT-000002",
-        message: "jwt解码异常",
+        message: "解析用户信息异常",
       });
     }
 
@@ -525,12 +550,11 @@ exports.info = async (req, res) => {
   const send = kit.createSendContentFn(res);
 
   try {
-    const token = req?.headers?.authorization?.split?.(' ')?.[1] || "";
-    const info = jwt.decode(token);
+    const info = kit.getUserInfoFn(req);
     if(!info || !Object.keys(info).length) {
       return send({
         code: "USER-INFO-000002",
-        message: "jwt解码异常",
+        message: "解析用户信息异常",
       });
     }
 

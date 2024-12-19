@@ -252,7 +252,7 @@ exports.list = async (req, res) => {
     const result = await Model.findAndCountAll({ 
       where: params,
       order: [
-        ['updatedAt', 'DESC'],
+        ['createdAt', 'DESC'],
       ],
       offset: page_num * page_size,
       limit: page_size,
@@ -281,6 +281,7 @@ exports.list = async (req, res) => {
         total,
         totalPages: Math.ceil(total / page_size),
         content,
+        actions: kit.getRoleActionsFn(kit.getUserInfoFn(req)?.role),
       },
     });
   } catch (error) {
