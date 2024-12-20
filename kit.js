@@ -510,3 +510,23 @@ exports.addToBlacklistFn = async (token, expiresIn) => {
     const info = jwt.decode(token);
     return info;
  }
+
+ /**
+  * 终端类型是否为PC - 判断操作
+  * @param {*} req 
+  * @returns 
+  */
+ exports.isPCFn = (req) => {
+    const terminal = req?.headers?.terminal || "";
+    return terminal === "PC";
+ }
+
+ /**
+  * 终端类型是否为BOSS - 判断操作
+  * @param {*} req 
+  * @returns 
+  */
+ exports.isBossFn = (req) => {
+    const terminal = req?.headers?.terminal || "";
+    return terminal === "BOSS";
+ }
