@@ -223,6 +223,7 @@ exports.update = async (req, res) => {
  */
 exports.list = async (req, res) => {
   const send = kit.createSendContentFn(res);
+  const isBoss = kit.isBossFn(res);
 
   try {
     const { goods_name, id, pageNum, pageSize, } = req.body || {};
@@ -272,17 +273,23 @@ exports.list = async (req, res) => {
 
       return item;
     }).filter(Boolean);
+
+    const context = {
+      pageNum: page_num,
+      pageSize: page_size,
+      total,
+      totalPages: Math.ceil(total / page_size),
+      content,
+    };
+    if(isBoss) {
+      Object.assign(context, {
+        actions: kit.getRoleActionsFn(kit.getUserInfoFn(req)?.role),
+      });
+    }
     
     send({
       code: config.SUCCESS_CODE,
-      context: {
-        pageNum: page_num,
-        pageSize: page_size,
-        total,
-        totalPages: Math.ceil(total / page_size),
-        content,
-        actions: kit.getRoleActionsFn(kit.getUserInfoFn(req)?.role),
-      },
+      context,
     });
   } catch (error) {
     send({
