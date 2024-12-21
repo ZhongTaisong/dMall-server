@@ -11,5 +11,6 @@ module.exports = () => {
     router.delete('/delete/:id', controller.delete);
     router.put('/update', controller.update);
     router.post('/list', controller.list);
+    router.post('/public/list', controller.list);
     return router;
 }
