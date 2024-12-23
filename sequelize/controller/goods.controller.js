@@ -223,7 +223,7 @@ exports.update = async (req, res) => {
  */
 exports.list = async (req, res) => {
   const send = kit.createSendContentFn(res);
-  const isBoss = kit.isBossFn(res);
+  const isBoss = kit.isBossFn(req);
 
   try {
     const { goods_name, id, pageNum, pageSize, } = req.body || {};
