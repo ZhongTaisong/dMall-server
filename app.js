@@ -6,7 +6,6 @@ const logger = require('morgan');
 const helmet = require('helmet');
 // 验证token
 const { expressjwt } = require('express-jwt');
-const pool = require('./pool');
 const config = require('./config');
 const kit = require('./kit');
 const app = express();
@@ -33,12 +32,6 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use('/api/public', express.static(path.join(__dirname, 'public')));
 
-/** 将pool挂在到req上 */
-app.use((req, res, next) => {
-  req.pool = pool;
-  next();
-});
-
 /** 验证token */
 app.use(
   expressjwt({ 
@@ -53,7 +46,7 @@ app.use(
 );
 
 app.use(function(err, req, res, next) {
-  const send = kit.createSendContentFn(res);
+  const send = kit.createSendContentFn(req, res);
   if(err?.name === 'UnauthorizedError') {
     return send({
       code: "APP-ERR-000001",
