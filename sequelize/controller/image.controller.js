@@ -12,7 +12,7 @@ const Model = db[model_name];
  * @returns 
  */
 exports.create = async (req, res) => {
-  const send = kit.createSendContentFn(res);
+  const send = kit.createSendContentFn(req, res);
   const path_name = req?.path;
   const image_save_path = {
     "/upload/user": config.USER_PATH,
