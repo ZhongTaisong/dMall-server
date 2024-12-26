@@ -16,7 +16,7 @@ const isExistFn = kit.isExistFn(Model);
  * @returns 
  */
 exports.create = async (req, res) => {
-  const send = kit.createSendContentFn(res);
+  const send = kit.createSendContentFn(req, res);
 
   try {
     const body = req.body || {};
@@ -79,7 +79,7 @@ exports.create = async (req, res) => {
  * @param {*} res 
  */
 exports.delete = async (req, res) => {
-  const send = kit.createSendContentFn(res);
+  const send = kit.createSendContentFn(req, res);
 
   try {
     const params = req.params || {};
@@ -139,7 +139,7 @@ exports.delete = async (req, res) => {
  * @param {*} res 
  */
 exports.update = async (req, res) => {
-  const send = kit.createSendContentFn(res);
+  const send = kit.createSendContentFn(req, res);
 
   try {
     const body = req.body || {};
@@ -222,8 +222,8 @@ exports.update = async (req, res) => {
  * @param {*} res 
  */
 exports.list = async (req, res) => {
-  const send = kit.createSendContentFn(res);
-  const isBoss = kit.isBossFn(res);
+  const send = kit.createSendContentFn(req, res);
+  const isBoss = kit.isBossFn(req);
 
   try {
     const { goods_name, id, pageNum, pageSize, } = req.body || {};

@@ -390,7 +390,7 @@ exports.uploadImgFn = (params) => {
  * @param params 
  * @returns 
  */
-exports.createSendContentFn = (res) => (params) => {
+exports.createSendContentFn = (req, res) => (params) => {
     if(!res || !Object.keys(res).length) return;
 
     const code = params?.code ?? null;
@@ -412,7 +412,7 @@ exports.createSendContentFn = (res) => (params) => {
     res?.status?.(200)?.send({
         code,
         context,
-        message,
+        message: exports.i18nParserTextFn(req, message),
     });
 }
 
@@ -529,4 +529,21 @@ exports.addToBlacklistFn = async (token, expiresIn) => {
  exports.isBossFn = (req) => {
     const terminal = req?.headers?.terminal || "";
     return terminal === "BOSS";
+ }
+
+ exports.i18nParserTextFn = (req, text) => {
+    if(!text) return "";
+
+    const lang = req?.headers?.lang || "zh";
+    try {
+        const json = require(`./i18n/language/${ lang }-i18n.json`);
+        return json[text] || text;
+    } catch (error) {
+        exports.createLogContentFn({
+            path: "i18nParserTextFn",
+            error,
+        });
+    }
+
+    return text;
  }
