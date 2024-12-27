@@ -8,8 +8,8 @@ const kit = require('./../kit');
  * @returns 
  */
 module.exports = () => {
-    router.post('/upload/goods', kit.uploadImgFn().array('goodsImgs', 6), controller.create);
-    router.post('/upload/user', kit.uploadImgFn().array('user', 1), controller.create);
+    router.post('/upload/goods', kit.uploadImgFn().single('goods'), controller.create);
+    router.post('/upload/user', kit.uploadImgFn().single('user'), controller.create);
     router.delete('/delete/:id', controller.delete);
     router.post('/list', controller.list);
     router.post('/list/all', controller.listAll);

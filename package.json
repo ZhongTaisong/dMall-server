@@ -10,7 +10,7 @@
     "dev": "NODE_ENV=development nodemon --config ./nodemon.json ./bin/www",
     "prod": "NODE_ENV=production node ./bin/www",
     "client": "nodemon ./client.js",
-    "cleanUpImages": "node ./utils/clean-up-images.js"
+    "clean:up:image": "node ./utils/clean-up-images.js"
   },
   "author": "zhongtaisong",
   "license": "ISC",
@@ -35,6 +35,7 @@
     "mysql2": "^3.9.2",
     "redis": "^4.3.1",
     "sequelize": "^6.37.1",
+    "tinify": "^1.7.1",
     "uuid": "^9.0.0",
     "yaml": "^2.4.1"
   },

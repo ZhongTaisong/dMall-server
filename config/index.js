@@ -49,3 +49,7 @@ exports.USER_PATH = "/public/assets/images/user";
  * 商品 - 图片存储路径
  */
 exports.GOODS_PATH = "/public/assets/images/goods";
+
+exports.TEMP_IMAGE_PATH = "/public/assets/images";
+
+exports.TINIFY_KEY = "NLYqtqjHVX49MrL7K9rpzscdMgRYwHKT";

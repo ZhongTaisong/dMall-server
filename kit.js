@@ -11,6 +11,7 @@ const moment = require('moment');
 const jwt = require('jsonwebtoken');
 const model = require("./sequelize/model/index");
 const BlackTokenListModel = model["blackTokenList"];
+const tinify = require("tinify");
 
 /**
  * 获取 - 请求成功后的数据
@@ -169,7 +170,7 @@ exports.upload = (params) => {
 
     const path_map = {
         user: config.USER_PATH,
-        goodsImgs: config.GOODS_PATH,
+        goods: config.GOODS_PATH,
     };
 
     let { fileName, fileFormat, } = params;
@@ -199,10 +200,15 @@ exports.upload = (params) => {
                 if(!file || !Object.keys(file).length) return;
 
                 const { fieldname, } = file;
-                const pathname = path_map[fieldname];
-                if(!pathname) return;
+                const path_name = path_map[fieldname];
+                if(path_name) {
+                    Object.assign(file, {
+                        imagepath01: path.join(__dirname, ".", path_name),
+                        imagepath02: path_name,
+                    })
+                }
 
-                const _pathname = path.join(__dirname, ".", pathname);
+                const _pathname = path.join(__dirname, ".", config.TEMP_IMAGE_PATH);
                 if(!fs.existsSync(_pathname)) {
                     fs.mkdirSync(_pathname, { recursive: true, });
                 }
@@ -220,6 +226,10 @@ exports.upload = (params) => {
         }), 
     });
 };
+
+exports.generateFileNameFn = () => {
+    return exports.md5(`${ Date.now() }${ Math.round(Math.random() * 1E9) }`);
+}
 
 /** 设置响应数据格式 */
 exports.setResponseDataFormat = (code = config.SUCCESS_CODE) => (content = null) => (msg = null) => ({ code, content, msg, });
@@ -547,3 +557,9 @@ exports.addToBlacklistFn = async (token, expiresIn) => {
 
     return text;
  }
+
+exports.tinify = () => {
+    tinify.key = config?.TINIFY_KEY;
+
+    return tinify;
+}

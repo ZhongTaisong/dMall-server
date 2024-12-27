@@ -4,6 +4,7 @@ const path = require('path');
 const config = require('./../../config');
 const model_name = "image";
 const Model = db[model_name];
+const fs = require("fs");
 
 /**
  * 新增上传图片
@@ -11,32 +12,51 @@ const Model = db[model_name];
  * @param {*} res
  * @returns 
  */
-exports.create = async (req, res) => {
+exports.create = (req, res) => {
   const send = kit.createSendContentFn(req, res);
-  const path_name = req?.path;
-  const image_save_path = {
-    "/upload/user": config.USER_PATH,
-    "/upload/goods": config.GOODS_PATH,
-  }[path_name];
-  if(!image_save_path) {
-    return send({
-      code: "IMAGE-CREATE-000002",
-      message: "图片存储路径异常",
-    });
-  }
+  const file = req?.file;
+  const file_path = file?.path;
+  const imagepath01 = file?.imagepath01;
+  const imagepath02 = file?.imagepath02;
   
   try {
-    const promise_list = req.files.map(file => {
-      const url = `${ config?.REQUEST_URL }${ image_save_path }/${ path.basename(file.path) }`;
-      return Model.create({ url, });
-    });
-    const list = await Promise.all(promise_list);
+    if(!file_path || !imagepath01 || !imagepath02) {
+      return send({
+        code: "IMAGE-CREATE-000002",
+        message: "图片存储路径异常",
+      });
+    }
+    
+    kit.tinify().fromFile(file_path).toBuffer(async (err, buffer) => {
+      if(err) {
+        return send({
+          code: "IMAGE-CREATE-000003",
+          error: err,
+        });
+      }
 
-    send({
-      code: config.SUCCESS_CODE,
-      context: list?.map?.(item => item?.url)?.filter?.(Boolean) || [],
-      message: "图片上传成功",
+      try {
+        fs.writeFileSync(path.join(imagepath01, path.basename(file_path)), buffer);
+        if(fs.existsSync(file_path)) {
+          fs.unlinkSync(file_path);
+        }
+      } catch (error) {
+        return send({
+          code: "IMAGE-CREATE-000004",
+          error,
+        });
+      }
+    
+      const url = `${ config?.REQUEST_URL }${ imagepath02 }/${ path.basename(file.path) }`;
+      const result = await Model.create({ url, });
+      
+      send({
+        code: config.SUCCESS_CODE,
+        context: [result?.url].filter(Boolean),
+        message: "图片上传成功",
+      });
     });
+
   } catch (error) {
     send({
       code: "IMAGE-CREATE-000001",
