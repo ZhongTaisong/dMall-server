@@ -292,7 +292,7 @@ exports.update = async (req, res) => {
 };
 
 /**
- * 根据筛选条件查询用户
+ * 根据筛选条件查询
  * @param {*} req 
  * @param {*} res 
  */

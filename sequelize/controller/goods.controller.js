@@ -217,7 +217,7 @@ exports.update = async (req, res) => {
 };
 
 /**
- * 根据筛选条件查询商品
+ * 根据筛选条件查询
  * @param {*} req 
  * @param {*} res 
  */
